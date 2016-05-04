@@ -1,9 +1,15 @@
 package com.wh.bear.bearmeiaplayer;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -11,11 +17,16 @@ import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.RemoteViews;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.wh.bear.bearmeiaplayer.bean.LrcView;
 import com.wh.bear.bearmeiaplayer.bean.Music;
 import com.wh.bear.bearmeiaplayer.utils.MediaThemeKeeper;
@@ -27,25 +38,25 @@ import java.util.ArrayList;
 /**
  * Created by Administrator on 15-10-12.
  */
-public class MusicPlayerActivity extends Activity{
+public class MusicPlayerActivity extends Activity {
 
     private static final int PROGRESS_UPDATE = 0x101;
     private static final int DURATION_UPDATE = 0x102;
 
-    RelativeLayout music_layout;
+    LinearLayout music_layout;
     public static LrcView lrcView;
-    ImageButton back,play_model,music_preview,music_next;
+    ImageButton back, play_model, music_preview, music_next;
     static ImageButton music_play;
     static TextView title;
-    static TextView music_currentTime,music_endTime;
+    static TextView music_currentTime, music_endTime;
     static SeekBar music_progress;
     static ArrayList<Music> data_music;
     int firstPosition;//第一次开始播放的位置
     static int duration;
     static int currentPosition;//当前播放音乐的位置
     private static int currentProgress;//当前进度
-    int music_model=0;
-    static Handler handler=new Handler(){
+    int music_model = 0;
+    static Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -59,12 +70,11 @@ public class MusicPlayerActivity extends Activity{
                     break;
                 case DURATION_UPDATE:
                     Music music = data_music.get(currentPosition);
-                    initStartView(music.getDuration(),music.getTilte());
+                    initStartView(music.getDuration(), music.getTilte());
                     break;
             }
         }
     };
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,21 +82,22 @@ public class MusicPlayerActivity extends Activity{
 
         setContentView(R.layout.music_player_layout);
 
-        music_layout= (RelativeLayout) findViewById(R.id.music_layout);
-        back= (ImageButton) findViewById(R.id.back);
-        play_model= (ImageButton) findViewById(R.id.play_model);
-        music_preview= (ImageButton) findViewById(R.id.music_preview);
-        music_next= (ImageButton) findViewById(R.id.music_next);
-        music_play= (ImageButton) findViewById(R.id.music_play);
-        title= (TextView) findViewById(R.id.music_title);
-        music_currentTime= (TextView) findViewById(R.id.music_currentTime);
-        music_endTime= (TextView) findViewById(R.id.music_endTime);
-        music_progress= (SeekBar) findViewById(R.id.music_progress);
-        lrcView= (LrcView) findViewById(R.id.lrcShowView);
+        music_layout = (LinearLayout) findViewById(R.id.music_layout);
+        back = (ImageButton) findViewById(R.id.back);
+        play_model = (ImageButton) findViewById(R.id.play_model);
+        music_preview = (ImageButton) findViewById(R.id.music_preview);
+        music_next = (ImageButton) findViewById(R.id.music_next);
+        music_play = (ImageButton) findViewById(R.id.music_play);
+        title = (TextView) findViewById(R.id.music_title);
+        music_currentTime = (TextView) findViewById(R.id.music_currentTime);
+        music_endTime = (TextView) findViewById(R.id.music_endTime);
+        music_progress = (SeekBar) findViewById(R.id.music_progress);
+        lrcView = (LrcView) findViewById(R.id.lrcShowView);
+
 
         //读取主题
         int themeId = MediaThemeKeeper.readTheme(this);
-        changeTheme(music_layout,themeId);
+        changeTheme(music_layout, themeId);
         //读取播放模式
         int model = MediaThemeKeeper.readPlaymodel(this);
         initModel(model);
@@ -96,9 +107,9 @@ public class MusicPlayerActivity extends Activity{
                 PhoneStateListener.LISTEN_CALL_STATE);
 
         Intent intent = getIntent();
-        data_music= intent.getParcelableArrayListExtra("data_music");
+        data_music = intent.getParcelableArrayListExtra("data_music");
         firstPosition = intent.getIntExtra("firstPosition", 0);
-        currentPosition=firstPosition;
+        currentPosition = firstPosition;
 
         Music music = data_music.get(firstPosition);
         duration = music.getDuration();
@@ -106,11 +117,11 @@ public class MusicPlayerActivity extends Activity{
         initStartView(duration, music.getTilte());
 
         //启动service
-        Intent service = new Intent(MusicPlayerActivity.this,MusicService.class);
+        Intent service = new Intent(MusicPlayerActivity.this, MusicService.class);
         service.putExtra("url", music.getUrl());
         startService(service);
         //发送首次广播传递数据
-        Intent receiver=new Intent("com.iotek.bearmediaplayer.MusicServiceReceiver");
+        Intent receiver = new Intent("com.iotek.bearmediaplayer.MusicServiceReceiver");
         receiver.putParcelableArrayListExtra("data_music", data_music);
         receiver.putExtra("firstPosition", firstPosition);
 
@@ -120,6 +131,7 @@ public class MusicPlayerActivity extends Activity{
         //播放按钮事件
         music_play.setOnClickListener(new View.OnClickListener() {
             int count = 0;
+
             @Override
             public void onClick(View v) {
 
@@ -141,17 +153,17 @@ public class MusicPlayerActivity extends Activity{
 
             @Override
             public void onClick(View v) {
-                if (currentPosition>=1){
+                if (currentPosition >= 1) {
                     currentPosition--;
                 }
                 Music m = data_music.get(currentPosition);
                 duration = m.getDuration();
-                initStartView(duration,m.getTilte());
-                Intent service = new Intent(MusicPlayerActivity.this,MusicService.class);
+                initStartView(duration, m.getTilte());
+                Intent service = new Intent(MusicPlayerActivity.this, MusicService.class);
                 service.putExtra("url", m.getUrl());
                 startService(service);
 
-                Intent receiver=new Intent("com.iotek.bearmediaplayer.MusicServiceReceiver");
+                Intent receiver = new Intent("com.iotek.bearmediaplayer.MusicServiceReceiver");
                 receiver.putExtra("firstPosition", currentPosition);
 
                 sendBroadcast(receiver);
@@ -163,17 +175,17 @@ public class MusicPlayerActivity extends Activity{
         music_next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (currentPosition<data_music.size()-1){
+                if (currentPosition < data_music.size() - 1) {
                     currentPosition++;
                 }
                 Music m = data_music.get(currentPosition);
                 duration = m.getDuration();
                 initStartView(duration, m.getTilte());
-                Intent service = new Intent(MusicPlayerActivity.this,MusicService.class);
+                Intent service = new Intent(MusicPlayerActivity.this, MusicService.class);
                 service.putExtra("url", m.getUrl());
                 startService(service);
 
-                Intent receiver=new Intent("com.iotek.bearmediaplayer.MusicServiceReceiver");
+                Intent receiver = new Intent("com.iotek.bearmediaplayer.MusicServiceReceiver");
                 receiver.putExtra("firstPosition", currentPosition);
 
                 sendBroadcast(receiver);
@@ -195,9 +207,9 @@ public class MusicPlayerActivity extends Activity{
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 int progress = seekBar.getProgress();
-                Intent intent = new Intent(MusicPlayerActivity.this,MusicService.class);
+                Intent intent = new Intent(MusicPlayerActivity.this, MusicService.class);
                 intent.putExtra("data", "changeProgress");
-                intent.putExtra("progress",progress);
+                intent.putExtra("progress", progress);
                 startService(intent);
             }
         });
@@ -240,7 +252,7 @@ public class MusicPlayerActivity extends Activity{
         back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent1=new Intent(MusicPlayerActivity.this,MainActivity.class);
+                Intent intent1 = new Intent(MusicPlayerActivity.this, MainActivity.class);
                 startActivity(intent1);
             }
         });
@@ -248,10 +260,11 @@ public class MusicPlayerActivity extends Activity{
 
     /**
      * 初始化播放界面
+     *
      * @param duration
      * @param text
      */
-    private static void initStartView(int duration,String text) {
+    private static void initStartView(int duration, String text) {
         title.setText(text);
         music_progress.setMax(duration);
         try {
@@ -263,6 +276,7 @@ public class MusicPlayerActivity extends Activity{
 
     /**
      * 设置当前音乐播放模式
+     *
      * @param currentModel
      */
     public void setCurrentModel(int currentModel) {
@@ -273,10 +287,11 @@ public class MusicPlayerActivity extends Activity{
 
     /**
      * 每次启动activity时初始化播放模式及图标
+     *
      * @param model
      */
     public void initModel(int model) {
-        switch (model){
+        switch (model) {
             case 0:
                 play_model.setImageResource(R.drawable.straigthplay);
                 break;
@@ -290,7 +305,7 @@ public class MusicPlayerActivity extends Activity{
                 play_model.setImageResource(R.drawable.repeatone);
                 break;
         }
-        music_model=model;
+        music_model = model;
         setCurrentModel(model);
     }
 
@@ -303,36 +318,39 @@ public class MusicPlayerActivity extends Activity{
             handler.sendEmptyMessage(PROGRESS_UPDATE);
             //当service自动播放时，用于更新界面的广播
             int next = intent.getIntExtra("next", -1);
-            if (next!=-1){
-                currentPosition=next;
+            if (next != -1) {
+                currentPosition = next;
                 handler.sendEmptyMessage(DURATION_UPDATE);
             }
         }
     }
+
     /**
      * 发送广播开始音乐
      */
-    public void playOnstart(){
-        Intent intent = new Intent(MusicPlayerActivity.this,MusicService.class);
+    public void playOnstart() {
+        Intent intent = new Intent(MusicPlayerActivity.this, MusicService.class);
         intent.putExtra("data", "play");
         startService(intent);
     }
+
     /**
      * 发送广播暂停音乐
      */
-    public void playOnpause(){
-        Intent intent = new Intent(MusicPlayerActivity.this,MusicService.class);
+    public void playOnpause() {
+        Intent intent = new Intent(MusicPlayerActivity.this, MusicService.class);
         intent.putExtra("data", "pause");
         startService(intent);
     }
 
     /**
      * 改变主题
+     *
      * @param main_layout
      * @param themeId
      */
-    private void changeTheme(RelativeLayout main_layout, int themeId) {
-        switch (themeId){
+    private void changeTheme(LinearLayout main_layout, int themeId) {
+        switch (themeId) {
             case 1:
                 main_layout.setBackgroundResource(R.drawable.p1);
                 break;
@@ -354,16 +372,35 @@ public class MusicPlayerActivity extends Activity{
         }
     }
 
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     @Override
     protected void onDestroy() {
         super.onDestroy();
         MediaThemeKeeper.writePlaymodel(this, music_model);
+
+        initNotification();
+    }
+
+    NotificationManager manager;
+    Notification build;
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+    public void initNotification() {
+        manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        Notification.Builder builder = new Notification.Builder(this);
+        builder.setSmallIcon(R.mipmap.ic_launcher);
+        Music music = data_music.get(currentPosition);
+        builder.setContentTitle(music.getTilte());
+        builder.setContentText(music.getArtist() +"\t正在播放...");
+        builder.setContentIntent(PendingIntent.getActivity(this,0x001,new Intent(this,this.getClass()),PendingIntent.FLAG_UPDATE_CURRENT));
+        build = builder.build();
+        build.flags |= Notification.FLAG_AUTO_CANCEL;
+
+        manager.notify(build.flags, build);
     }
 
     /**
-     *
-     * @author
-     * 电话监听器类
+     * @author 电话监听器类
      */
     private class MobliePhoneStateListener extends PhoneStateListener {
         @Override
@@ -381,4 +418,5 @@ public class MusicPlayerActivity extends Activity{
             }
         }
     }
+
 }
