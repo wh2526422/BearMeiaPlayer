@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">BearMediaPlayer</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="sound">音量</string>
+    <string name="hide">《</string>
+    <string name="show">》</string>
+    <string name="playlist">播放列表</string>
+    <string name="media">媒体类型</string>
+    <string name="isplaying">正在播放...</string>
+    <string name="changetheme">主题</string>
+    <string name="choosetheme">请选择主题:</string>
+    <string name="hint">点击图片可预览，长按选择</string>
+</resources>
