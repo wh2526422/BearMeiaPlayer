@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity{
     ChangeMusicSingFlagReceiver receiver;
     MusicListAdapter mAdapter;
     VideoListAdapter vAdapter;
+    int currentPosition;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,8 +94,7 @@ public class MainActivity extends AppCompatActivity{
 
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                prevPosition = currentPosiont;
-                currentPosiont = position;
+                refreshMusicList(position, true);
                 //点击视频listview
                 if (scanner_switch.isChecked()) {
                     Intent intent = new Intent(MainActivity.this, VideoPlayerActivity.class);
@@ -235,9 +235,6 @@ public class MainActivity extends AppCompatActivity{
         media_list.setAdapter(vAdapter);
     }
 
-    int currentPosiont;
-    int prevPosition;
-
     /**
      * 改变歌曲是否在唱的状态
      */
@@ -247,17 +244,28 @@ public class MainActivity extends AppCompatActivity{
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals("com.wh.changesingflag")) {
                 int position = intent.getIntExtra("position",0);
-                data_music.get(prevPosition).singing = false;
-                data_music.get(position).singing = true;
-                currentPosiont = position;
-                if (mAdapter != null) {
-                    mAdapter.setData(data_music);
-                    mAdapter.notifyDataSetChanged();
-                } else {
-                    mAdapter = new MusicListAdapter(data_music,MainActivity.this);
-                    media_list.setAdapter(mAdapter);
-                }
+                boolean play = intent.getBooleanExtra("play", false);
+                refreshMusicList(position,play);
             }
+        }
+    }
+
+    /**
+     * 刷新音乐列表
+     * @param position
+     * @param play
+     */
+    private void refreshMusicList(int position, boolean play) {
+        currentPosition = position;
+        for (int i = 0; i < data_music.size(); i ++) {
+            data_music.get(i).singing = play && i == position;
+        }
+        if (mAdapter != null) {
+            mAdapter.setData(data_music);
+            mAdapter.notifyDataSetChanged();
+        } else {
+            mAdapter = new MusicListAdapter(data_music,MainActivity.this);
+            media_list.setAdapter(mAdapter);
         }
     }
 

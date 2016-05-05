@@ -8,7 +8,6 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,15 +17,9 @@ import android.telephony.TelephonyManager;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-import android.widget.RemoteViews;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.wh.bear.bearmeiaplayer.bean.LrcView;
 import com.wh.bear.bearmeiaplayer.bean.Music;
 import com.wh.bear.bearmeiaplayer.utils.MediaThemeKeeper;
@@ -51,10 +44,10 @@ public class MusicPlayerActivity extends Activity {
     static TextView music_currentTime, music_endTime;
     static SeekBar music_progress;
     static ArrayList<Music> data_music;
-    int firstPosition;//第一次开始播放的位置
+    int firstPosition;                                          //第一次开始播放的位置
     static int duration;
-    static int currentPosition;//当前播放音乐的位置
-    private static int currentProgress;//当前进度
+    static int currentPosition;                                 //当前播放音乐的位置
+    private static int currentProgress;                         //当前进度
     int music_model = 0;
     static Handler handler = new Handler() {
         @Override
@@ -79,7 +72,6 @@ public class MusicPlayerActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.music_player_layout);
 
         music_layout = (LinearLayout) findViewById(R.id.music_layout);
@@ -93,7 +85,6 @@ public class MusicPlayerActivity extends Activity {
         music_endTime = (TextView) findViewById(R.id.music_endTime);
         music_progress = (SeekBar) findViewById(R.id.music_progress);
         lrcView = (LrcView) findViewById(R.id.lrcShowView);
-
 
         //读取主题
         int themeId = MediaThemeKeeper.readTheme(this);
@@ -267,6 +258,7 @@ public class MusicPlayerActivity extends Activity {
     private static void initStartView(int duration, String text) {
         title.setText(text);
         music_progress.setMax(duration);
+        music_play.setImageResource(android.R.drawable.ic_media_pause);
         try {
             music_endTime.setText(StringUtils.getMusicDuration(duration));
         } catch (ParseException e) {
@@ -372,18 +364,17 @@ public class MusicPlayerActivity extends Activity {
         }
     }
 
-
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     @Override
     protected void onDestroy() {
         super.onDestroy();
         MediaThemeKeeper.writePlaymodel(this, music_model);
-
         initNotification();
     }
 
     NotificationManager manager;
     Notification build;
+
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     public void initNotification() {
         manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -391,8 +382,8 @@ public class MusicPlayerActivity extends Activity {
         builder.setSmallIcon(R.mipmap.ic_launcher);
         Music music = data_music.get(currentPosition);
         builder.setContentTitle(music.getTilte());
-        builder.setContentText(music.getArtist() +"\t正在播放...");
-        builder.setContentIntent(PendingIntent.getActivity(this,0x001,new Intent(this,this.getClass()),PendingIntent.FLAG_UPDATE_CURRENT));
+        builder.setContentText(music.getArtist() + "\t正在播放...");
+        builder.setContentIntent(PendingIntent.getActivity(this, 0x001, new Intent(this, this.getClass()), PendingIntent.FLAG_UPDATE_CURRENT));
         build = builder.build();
         build.flags |= Notification.FLAG_AUTO_CANCEL;
 

@@ -26,7 +26,7 @@ public class LrcProcess {
      */
     public LrcProcess() {
         mLrcContent = new LrcContent();
-        lrcList = new ArrayList<LrcContent>();
+        lrcList = new ArrayList<>();
     }
 
     /**
@@ -38,7 +38,10 @@ public class LrcProcess {
         //定义一个StringBuilder对象，用来存放歌词内容
         StringBuilder stringBuilder = new StringBuilder();
         File f = new File(path.replace(".mp3", ".lrc"));
-
+        if (!f.exists()){
+            stringBuilder.append("木有歌词文件，赶紧去下载！...");
+            return stringBuilder.toString();
+        }
         try {
             //创建一个文件输入流对象
             FileInputStream fis = new FileInputStream(f);
@@ -69,7 +72,6 @@ public class LrcProcess {
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-            stringBuilder.append("木有歌词文件，赶紧去下载！...");
         } catch (IOException e) {
             e.printStackTrace();
             stringBuilder.append("木有读取到歌词哦！");
@@ -97,8 +99,7 @@ public class LrcProcess {
         int millisecond = Integer.parseInt(timeData[2]);
 
         //计算上一行与下一行的时间转换为毫秒数
-        int currentTime = (minute * 60 + second) * 1000 + millisecond * 10;
-        return currentTime;
+        return (minute * 60 + second) * 1000 + millisecond * 10;
     }
     public List<LrcContent> getLrcList() {
         return lrcList;

@@ -25,30 +25,33 @@ import java.util.TimerTask;
 /**
  * Created by Administrator on 15-10-12.
  */
-public class MusicService extends Service implements MediaPlayer.OnCompletionListener,MediaPlayer.OnPreparedListener{
+public class MusicService extends Service implements MediaPlayer.OnCompletionListener, MediaPlayer.OnPreparedListener {
 
     private MediaPlayer player;
-    private static int model=0;
-    private static ArrayList<Music> data_music;
-    private static int currentPosition;
-    private String url;
-    private List<LrcContent> lrcList = new ArrayList<>(); //存放歌词列表对象
-    private int index = 0;          //歌词检索值
-    Timer timer=new Timer();
-    private boolean startTask;
-    private Handler handler=new Handler();
-    private int currentTime;
-    private int duration;
-    TimerTask task=new TimerTask() {
+    private static int model = 0;                             //  当前播放模式
+    private static ArrayList<Music> data_music;             //  歌曲资源
+    private static int currentPosition;                     //  当前歌曲位置
+    private String url;                                     //  当前歌曲url
+    private List<LrcContent> lrcList = new ArrayList<>();   //存放歌词列表对象
+    private int index = 0;                                  //  歌词检索值
+    Timer timer = new Timer();
+    private boolean startTask;                              //  标志是否启动timer
+    private Handler handler = new Handler();
+    private int currentTime;                                //  当前播放时间
+    private int duration;                                   //  当前音乐时长
+    private boolean pause;                                  //  标志是否暂停
+    TimerTask task = new TimerTask() {
         @Override
         public void run() {
-            int currentProgress = player.getCurrentPosition();
-            Intent receiver=new Intent("com.iotek.bearmediaplayer.MusicBroadcastReiceiver");
-
-            receiver.putExtra("currentProgress",currentProgress);
-            sendBroadcast(receiver);
+            if (!pause) {
+                int currentProgress = player.getCurrentPosition();
+                Intent receiver = new Intent("com.iotek.bearmediaplayer.MusicBroadcastReiceiver");
+                receiver.putExtra("currentProgress", currentProgress);
+                sendBroadcast(receiver);
+            }
         }
     };
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -59,28 +62,27 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     public void onCreate() {
         super.onCreate();
 
-        if (player==null) {
-            player=new MediaPlayer();
+        if (player == null) {
+            player = new MediaPlayer();
         }
 
         player.setOnCompletionListener(this);
-
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String url = intent != null ? intent.getStringExtra("url") : null;
-        if (url!=null) {
-            if (url.equals(this.url)){
+        if (url != null) {
+            if (url.equals(this.url) && player != null && player.isPlaying()) {
                 initLrc(url);
                 return super.onStartCommand(intent, flags, startId);
             }
             initLrc(url);
             start(url);
-            this.url=url;
+            this.url = url;
         }
         String data = intent != null ? intent.getStringExtra("data") : null;
-        if (data!=null) {
+        if (data != null) {
             switch (data) {
                 case "pause":
                     pause();
@@ -105,44 +107,45 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
     @Override
     public void onCompletion(MediaPlayer mp) {
-        switch (model){
+        switch (model) {
             case 0:
                 //顺序播放
-                model=0;
+                model = 0;
                 currentPosition++;
-                if (currentPosition==data_music.size()){
+                if (currentPosition == data_music.size()) {
                     pause();
                     return;
                 }
                 break;
             case 1:
                 //随机播放
-                model=1;
-                Random random=new Random();
+                model = 1;
+                Random random = new Random();
                 currentPosition = random.nextInt(data_music.size());
                 break;
             case 2:
                 //整体循环
-                model=2;
+                model = 2;
                 currentPosition++;
-                if (currentPosition==data_music.size()){
-                    currentPosition=0;
+                if (currentPosition == data_music.size()) {
+                    currentPosition = 0;
                 }
                 break;
             case 3:
                 //单曲循环
-                model=3;
+                model = 3;
                 break;
         }
         setPositionPlay(currentPosition);
         //每次播放结束开始下一首歌时发送广播更新界面
-        Intent receiver=new Intent("com.iotek.bearmediaplayer.MusicBroadcastReiceiver");
-        receiver.putExtra("next",currentPosition);
+        Intent receiver = new Intent("com.iotek.bearmediaplayer.MusicBroadcastReiceiver");
+        receiver.putExtra("next", currentPosition);
         sendBroadcast(receiver);
     }
 
     /**
      * 播放前准备
+     *
      * @param url 音乐文件url
      */
     private void start(String url) {
@@ -163,52 +166,62 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
      * 开始播放
      */
     private void play() {
-        if (player!=null){
+        if (player != null) {
             player.start();
         }
         //计时器开始工作，更新进度
         if (!startTask) {
             timer.schedule(task, 1000, 1000);
-            startTask=true;
+            startTask = true;
         }
+        pause = false;
     }
 
     /**
      * 暂停
      */
     private void pause() {
-        if (player!=null){
+        if (player != null) {
             player.pause();
+            sendChangeSingFlagReceiver(player.isPlaying(), currentPosition);
         }
+        pause = true;
+
     }
 
     /**
      * 播放下一个位置的音乐
+     *
      * @param currentPosition
      */
     private void setPositionPlay(int currentPosition) {
         Music music = data_music.get(currentPosition);
-        url=music.getUrl();
+        url = music.getUrl();
         start(url);
         initLrc(url);
     }
 
     /**
      * 初始化歌词
+     *
      * @param url
      */
-    public void initLrc(String url){
+    public void initLrc(String url) {
         LrcProcess mLrcProcess = new LrcProcess();
         //读取歌词文件
         mLrcProcess.readLRC(url);
 
         //传回处理后的歌词文件
         lrcList = mLrcProcess.getLrcList();
+        if (lrcList == null || lrcList.size() == 0) {
+            return;
+        }
         MusicPlayerActivity.lrcView.setmLrcList(lrcList);
         //切换带动画显示歌词
         MusicPlayerActivity.lrcView.setAnimation(AnimationUtils.loadAnimation(this, R.anim.alpha_z));
         handler.post(mRunnable);
     }
+
     Runnable mRunnable = new Runnable() {
 
         @Override
@@ -221,14 +234,15 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
     /**
      * 根据时间获取歌词显示的索引值
+     *
      * @return
      */
     public int lrcIndex() {
-        if(player.isPlaying()) {
+        if (player.isPlaying()) {
             currentTime = player.getCurrentPosition();
             duration = player.getDuration();
         }
-        if(currentTime < duration) {
+        if (currentTime < duration) {
             for (int i = 0; i < lrcList.size(); i++) {
                 if (i < lrcList.size() - 1) {
                     if (currentTime < lrcList.get(i).getLrcTime() && i == 0) {
@@ -248,45 +262,50 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         return index;
     }
 
-    @Override
-    public void onPrepared(MediaPlayer mp) {
+    private void sendChangeSingFlagReceiver(boolean play, int position) {
         Intent intent = new Intent("com.wh.changesingflag");
-        intent.putExtra("position",currentPosition);
+        intent.putExtra("position", position);
+        intent.putExtra("play", play);
         sendBroadcast(intent);
     }
 
-    public static class MusicServiceReceiver extends BroadcastReceiver{
+    @Override
+    public void onPrepared(MediaPlayer mp) {
+        sendChangeSingFlagReceiver(mp.isPlaying(), currentPosition);
+    }
+
+    public static class MusicServiceReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
             //将音乐文件传入
             ArrayList<Music> data = intent.getParcelableArrayListExtra("data_music");
             int firstPosition = intent.getIntExtra("firstPosition", -1);
-            if (data!=null){
-                data_music=data;
+            if (data != null) {
+                data_music = data;
             }
-            if (firstPosition!=-1){
-                currentPosition=firstPosition;
+            if (firstPosition != -1) {
+                currentPosition = firstPosition;
             }
             //改变播放模式
             int music_model = intent.getIntExtra("music_model", -1);
-            if (music_model!=-1) {
-                switch (music_model){
+            if (music_model != -1) {
+                switch (music_model) {
                     case 0:
                         //顺序播放
-                        model=0;
+                        model = 0;
                         break;
                     case 1:
                         //随机播放
-                        model=1;
+                        model = 1;
                         break;
                     case 2:
                         //整体循环
-                        model=2;
+                        model = 2;
                         break;
                     case 3:
                         //单曲循环
-                        model=3;
+                        model = 3;
                         break;
                 }
             }
