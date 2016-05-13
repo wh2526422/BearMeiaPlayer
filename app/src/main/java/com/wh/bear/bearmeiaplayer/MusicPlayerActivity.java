@@ -2,9 +2,6 @@ package com.wh.bear.bearmeiaplayer;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -207,7 +204,6 @@ public class MusicPlayerActivity extends Activity {
 
         play_model.setOnClickListener(new View.OnClickListener() {
             int count = 0;
-
             @Override
             public void onClick(View v) {
                 if (count % 4 == 0) {
@@ -369,25 +365,6 @@ public class MusicPlayerActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         MediaThemeKeeper.writePlaymodel(this, music_model);
-        initNotification();
-    }
-
-    NotificationManager manager;
-    Notification build;
-
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-    public void initNotification() {
-        manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        Notification.Builder builder = new Notification.Builder(this);
-        builder.setSmallIcon(R.mipmap.ic_launcher);
-        Music music = data_music.get(currentPosition);
-        builder.setContentTitle(music.getTilte());
-        builder.setContentText(music.getArtist() + "\t正在播放...");
-        builder.setContentIntent(PendingIntent.getActivity(this, 0x001, new Intent(this, this.getClass()), PendingIntent.FLAG_UPDATE_CURRENT));
-        build = builder.build();
-        build.flags |= Notification.FLAG_AUTO_CANCEL;
-
-        manager.notify(build.flags, build);
     }
 
     /**
@@ -409,5 +386,4 @@ public class MusicPlayerActivity extends Activity {
             }
         }
     }
-
 }

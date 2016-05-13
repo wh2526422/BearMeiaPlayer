@@ -60,7 +60,9 @@ public class LrcProcess {
 
                     //处理歌词取得歌曲的时间
                     int lrcTime = time2Str(splitLrcData[0]);
-
+                    if (lrcTime == -1) {
+                        return stringBuilder.append("木有歌词文件，赶紧去下载！...").toString();
+                    }
                     mLrcContent.setLrcTime(lrcTime);
 
                     //添加进列表数组
@@ -94,9 +96,17 @@ public class LrcProcess {
         String timeData[] = timeStr.split("@"); //将时间分隔成字符串数组
 
         //分离出分、秒并转换为整型
-        int minute = Integer.parseInt(timeData[0]);
-        int second = Integer.parseInt(timeData[1]);
-        int millisecond = Integer.parseInt(timeData[2]);
+        int minute = 0;
+        int second = 0;
+        int millisecond = 0;
+        try {
+            minute = Integer.parseInt(timeData[0]);
+            second = Integer.parseInt(timeData[1]);
+            millisecond = Integer.parseInt(timeData[2]);
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            return -1;
+        }
 
         //计算上一行与下一行的时间转换为毫秒数
         return (minute * 60 + second) * 1000 + millisecond * 10;

@@ -28,7 +28,7 @@ public class LrcView extends android.widget.TextView {
     private int index = 0;      //list集合下标
 
 
-    private List<LrcContent> mLrcList = new ArrayList<LrcContent>();
+    private List<LrcContent> mLrcList = new ArrayList<>();
     private float not_creent_textSize;
 
     public void setmLrcList(List<LrcContent> mLrcList) {
