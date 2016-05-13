@@ -87,45 +87,21 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.video_player_layout);
-        player_screen = (SurfaceView) findViewById(R.id.player_screen);
-        ctr_layout = (LinearLayout) findViewById(R.id.ctr_layout);
-
-        media_progress = (SeekBar) findViewById(R.id.media_progress);
-        sound_progress = (SeekBar) findViewById(R.id.sound_progress);
-
-        btn_sound = (ImageButton) findViewById(R.id.btn_sound);
-        btn_rew = (ImageButton) findViewById(R.id.btn_rew);
-        btn_previous = (ImageButton) findViewById(R.id.btn_previous);
-        btn_play = (ImageButton) findViewById(R.id.btn_play);
-        btn_next = (ImageButton) findViewById(R.id.btn_next);
-        btn_ff = (ImageButton) findViewById(R.id.btn_ff);
-
-        current_time = (TextView) findViewById(R.id.current_time);
-        end_time = (TextView) findViewById(R.id.end_time);
-
-        video_list = (ListView) findViewById(R.id.video_list);
-        btn_ctr_list = (Button) findViewById(R.id.btn_ctr_list);
-
-        full_screen= (ImageButton) findViewById(R.id.full_screen);
-
-        currDisplay = getWindowManager().getDefaultDisplay();
-        // fullscreen
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        initUi();
         manager = (AudioManager) getSystemService(AUDIO_SERVICE);
 
         if (savedInstanceState != null) {
             currentProgress = savedInstanceState.getInt("currentProgress");
         }
-        helper=new SQLiteOptionHelper(this,"vedios",1);
+        helper=new SQLiteOptionHelper(this,"videos",1);
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
         data = bundle.getParcelableArrayList("data_video");
 
         firstPosition = bundle.getInt("firstPosition");
         currentPosition = firstPosition;
-        final String url = data.get(firstPosition).getUrl();
-        duration = data.get(firstPosition).getDuration();//获得视频时长
+        final String url = data.get(currentPosition).getUrl();
+        duration = data.get(currentPosition).getDuration();//获得视频时长
         initStartView(duration);
         //列表视图设置
         setVideoList();
@@ -344,6 +320,34 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
 
     }
 
+    private void initUi() {
+        player_screen = (SurfaceView) findViewById(R.id.player_screen);
+        ctr_layout = (LinearLayout) findViewById(R.id.ctr_layout);
+
+        media_progress = (SeekBar) findViewById(R.id.media_progress);
+        sound_progress = (SeekBar) findViewById(R.id.sound_progress);
+
+        btn_sound = (ImageButton) findViewById(R.id.btn_sound);
+        btn_rew = (ImageButton) findViewById(R.id.btn_rew);
+        btn_previous = (ImageButton) findViewById(R.id.btn_previous);
+        btn_play = (ImageButton) findViewById(R.id.btn_play);
+        btn_next = (ImageButton) findViewById(R.id.btn_next);
+        btn_ff = (ImageButton) findViewById(R.id.btn_ff);
+
+        current_time = (TextView) findViewById(R.id.current_time);
+        end_time = (TextView) findViewById(R.id.end_time);
+
+        video_list = (ListView) findViewById(R.id.video_list);
+        btn_ctr_list = (Button) findViewById(R.id.btn_ctr_list);
+
+        full_screen= (ImageButton) findViewById(R.id.full_screen);
+
+        currDisplay = getWindowManager().getDefaultDisplay();
+        // fullscreen
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    }
+
     /**
      * 列表初始化及控制设置
      */
@@ -560,11 +564,11 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
             handler.removeMessages(0x002);
         }
         //将数据储存进入数据库
-        Video vedio = data.get(currentPosition);
-        int l = helper.updateVedioProgress(vedio.getTitle(), currentProgress);
+        Video video = data.get(currentPosition);
+        int l = helper.updateVideoProgress(video.getTitle(), currentProgress);
         if (l<=0){
-            vedio.setCurrentProgress(currentProgress);
-            helper.setVedio(vedio);
+            video.setCurrentProgress(currentProgress);
+            helper.setVideo(video);
         }
 
     }

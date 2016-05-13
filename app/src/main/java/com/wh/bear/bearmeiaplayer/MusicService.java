@@ -43,7 +43,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private static ArrayList<Music> data_music;             //  歌曲资源
     private static int currentPosition;                     //  当前歌曲位置
     private String url;                                     //  当前歌曲url
-    private List<LrcContent> lrcList = new ArrayList<>();   //存放歌词列表对象
+    private List<LrcContent> lrcList = new ArrayList<>();   //  存放歌词列表对象
     private int index = 0;                                  //  歌词检索值
     Timer timer = new Timer();
     private boolean startTask;                              //  标志是否启动timer

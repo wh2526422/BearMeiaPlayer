@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -65,7 +64,7 @@ MainActivity extends AppCompatActivity {
 
         //判断开关是在视频端还是音乐端
         if (scanner_switch.isChecked()) {
-            scannerVedio();
+            scannerVideo();
         } else {
             scannerMusic();
         }
@@ -76,7 +75,7 @@ MainActivity extends AppCompatActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    scannerVedio();
+                    scannerVideo();
                 } else {
                     scannerMusic();
                 }
@@ -112,8 +111,6 @@ MainActivity extends AppCompatActivity {
                     Intent intent = new Intent(MainActivity.this, MusicPlayerActivity.class);
                     Bundle bundle = new Bundle();
                     bundle.putParcelableArrayList("data_music", data_music);
-                    Log.i("wanghuan", "FirstVisiblePosition\t" + media_list.getFirstVisiblePosition());
-                    Log.i("wanghuan", "Position\t" + position);
                     bundle.putInt("firstPosition", position);
                     intent.putExtras(bundle);
                     startActivity(intent);
@@ -213,29 +210,31 @@ MainActivity extends AppCompatActivity {
     /**
      * 扫描视频
      */
-    private void scannerVedio() {
+    private void scannerVideo() {
         if (!ifVedioScanned) {
             SQLiteOptionHelper helper = new SQLiteOptionHelper(this, "vedios", 1);
-            data_video = helper.getVedios();
+            data_video = helper.getVideos();
             if (data_video.size() == 0 && Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
                 ContentResolver resolver = getContentResolver();
                 String[] projection = {MediaStore.Video.Media.TITLE, MediaStore.Video.Media.DISPLAY_NAME,
                         MediaStore.Video.Media.DURATION, MediaStore.Video.Media.DATA};
                 Cursor cursor = resolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, projection, null, null, null);
 
-                while (cursor.moveToNext()) {
+                while (cursor != null && cursor.moveToNext()) {
 
                     String title = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.TITLE));
                     String display_name = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DISPLAY_NAME));
                     long duration = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.DURATION));
                     String url = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA));
 
-                    Video vedio = new Video(title, display_name, duration, url);
+                    Video video = new Video(title, display_name, duration, url);
 
-                    data_video.add(vedio);
+                    data_video.add(video);
                 }
-                cursor.close();
-                helper.setVedios(data_video);
+                if (cursor != null) {
+                    cursor.close();
+                }
+                helper.setVideos(data_video);
                 VideoListAdapter vAdapter = new VideoListAdapter(this, data_video);
                 media_list.setAdapter(vAdapter);
             }

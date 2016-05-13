@@ -34,7 +34,7 @@ public class SQLiteOptionHelper extends SQLiteOpenHelper{
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        String sql="create table vedio(" +
+        String sql="create table video(" +
                 "id integer primary key," +
                 "title varchar(20)," +
                 "display_name varchar(20)," +
@@ -55,7 +55,7 @@ public class SQLiteOptionHelper extends SQLiteOpenHelper{
      * @param vs
      * @return
      */
-    public void setVedios(List<Video> vs){
+    public void setVideos(List<Video> vs){
         db=getInstance(WRITE);
         for (Video v : vs) {
             ContentValues values=new ContentValues();
@@ -64,7 +64,7 @@ public class SQLiteOptionHelper extends SQLiteOpenHelper{
             values.put("duration",v.getDuration());
             values.put("url",v.getUrl());
             values.put("currentProgress",v.getCurrentProgress());
-            db.insert("vedio", null, values);
+            db.insert("video", null, values);
         }
         db.close();
     }
@@ -73,31 +73,31 @@ public class SQLiteOptionHelper extends SQLiteOpenHelper{
      * 从数据库中读取
      * @return
      */
-    public ArrayList<Video> getVedios(){
+    public ArrayList<Video> getVideos(){
         db=getInstance(READ);
-        ArrayList<Video> vedios=new ArrayList<>();
-        Cursor cursor = db.query("vedio", null, null, null, null, null, null);
+        ArrayList<Video> videos=new ArrayList<>();
+        Cursor cursor = db.query("video", null, null, null, null, null, null);
         while (cursor.moveToNext()){
             String title = cursor.getString(cursor.getColumnIndex("title"));
             String display_name = cursor.getString(cursor.getColumnIndex("display_name"));
             int duration = cursor.getInt(cursor.getColumnIndex("duration"));
             String url = cursor.getString(cursor.getColumnIndex("url"));
             int currentProgress = cursor.getInt(cursor.getColumnIndex("currentProgress"));
-            Video vedio=new Video(title, display_name, duration, url, currentProgress);
-            vedios.add(vedio);
+            Video video=new Video(title, display_name, duration, url, currentProgress);
+            videos.add(video);
         }
         cursor.close();
         db.close();
-        return vedios;
+        return videos;
 
     }
 
     /**
-     * 项数据库插入单条vedio
+     * 项数据库插入单条video
      * @param v
      * @return
      */
-    public long setVedio(Video v){
+    public long setVideo(Video v){
         db=getInstance(WRITE);
         ContentValues values = new ContentValues();
         values.put("title",v.getTitle());
@@ -105,37 +105,37 @@ public class SQLiteOptionHelper extends SQLiteOpenHelper{
         values.put("duration",v.getDuration());
         values.put("url",v.getUrl());
         values.put("currentProgress", v.getCurrentProgress());
-        long l = db.insert("vedio", null, values);
+        long l = db.insert("video", null, values);
         db.close();
         return l;
 
     }
 
     /**
-     * 从数据库中获取单个vedio对象
+     * 从数据库中获取单个video对象
      * @param title
      * @return
      */
-    public Video getVedio(String title){
+    public Video getVideo(String title){
         db=getInstance(READ);
-        Video vedio = null;
-        Cursor cursor = db.query("vedio", null, "title=?", new String[]{title}, null, null, null);
+        Video video = null;
+        Cursor cursor = db.query("video", null, "title=?", new String[]{title}, null, null, null);
         while (cursor.moveToFirst()){
             String display_name = cursor.getString(cursor.getColumnIndex("display_name"));
             int duration = cursor.getInt(cursor.getColumnIndex("duration"));
             String url = cursor.getString(cursor.getColumnIndex("url"));
             int currentProgress = cursor.getInt(cursor.getColumnIndex("currentProgress"));
-            vedio=new Video(title, display_name, duration, url, currentProgress);
+            video=new Video(title, display_name, duration, url, currentProgress);
         }
         cursor.close();
         db.close();
-        return vedio;
+        return video;
 
     }
 
     public int clearData(){
         db=getInstance(WRITE);
-        return db.delete("vedio",null,null);
+        return db.delete("video",null,null);
     }
 
     /**
@@ -144,14 +144,14 @@ public class SQLiteOptionHelper extends SQLiteOpenHelper{
      * @param progress
      * @return
      */
-    public int updateVedioProgress(String title,int progress){
+    public int updateVideoProgress(String title,int progress){
         db=getInstance(WRITE);
 
         ContentValues values=new ContentValues();
 
         values.put("currentProgress", progress);
 
-        int i = db.update("vedio", values, "title=?", new String[]{title});
+        int i = db.update("video", values, "title=?", new String[]{title});
         db.close();
         return i;
 

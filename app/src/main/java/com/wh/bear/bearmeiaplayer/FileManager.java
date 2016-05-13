@@ -6,6 +6,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Parcelable;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.AdapterView;
@@ -13,6 +14,7 @@ import android.widget.ListView;
 
 
 import com.wh.bear.bearmeiaplayer.adapter.FilelistAdapter;
+import com.wh.bear.bearmeiaplayer.bean.Music;
 import com.wh.bear.bearmeiaplayer.bean.Video;
 import com.wh.bear.bearmeiaplayer.utils.StringUtils;
 
@@ -57,9 +59,9 @@ public class FileManager extends Activity{
                         Intent intent=new Intent(FileManager.this, VideoPlayerActivity.class);
                         Bundle bundle=new Bundle();
                         MediaPlayer player=MediaPlayer.create(FileManager.this, Uri.parse(currentFile.getAbsolutePath()));
-                        ArrayList<Video> data=new ArrayList<Video>();
-                        Video vedio=new Video(currentFile.getName(),null,player.getDuration(),currentFile.getAbsolutePath());
-                        data.add(vedio);
+                        ArrayList<Video> data=new ArrayList<>();
+                        Video video=new Video(currentFile.getName(),null,player.getDuration(),currentFile.getAbsolutePath());
+                        data.add(video);
                         bundle.putParcelableArrayList("data_video", data);
                         bundle.putInt("firstPosition", 0);
                         intent.putExtras(bundle);
