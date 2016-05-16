@@ -27,6 +27,10 @@ public class PlayerListAdapter extends BaseAdapter {
         this.index=index;
     }
 
+    public void setData(ArrayList<Video> data) {
+        this.data = data;
+    }
+
     @Override
     public int getCount() {
         return data.size();
@@ -58,13 +62,14 @@ public class PlayerListAdapter extends BaseAdapter {
             holder= (Holder) convertView.getTag();
         }
 
-        holder.title.setText(data.get(position).getTitle());
+        Video video = data.get(position);
+        holder.title.setText(video.getTitle());
         try {
-            holder.duration.setText(StringUtils.getVideoDuration(data.get(position).getDuration()));
+            holder.duration.setText(StringUtils.getVideoDuration(video.getDuration()));
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        if (position==index){
+        if (video.on){
             holder.play_flag.setVisibility(View.VISIBLE);
         }else {
             holder.play_flag.setVisibility(View.GONE);

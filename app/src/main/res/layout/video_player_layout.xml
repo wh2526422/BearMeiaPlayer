@@ -71,6 +71,7 @@
                     android:id="@+id/btn_sound"
                     android:layout_width="39dp"
                     android:layout_height="36dp"
+                    style="?android:attr/buttonBarButtonStyle"
                     android:src="@android:drawable/ic_lock_silent_mode_off" />
 
                 <SeekBar
@@ -88,30 +89,35 @@
                     android:id="@+id/btn_rew"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    style="?android:attr/buttonBarButtonStyle"
                     android:src="@android:drawable/ic_media_rew" />
 
                 <ImageButton
                     android:id="@+id/btn_previous"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    style="?android:attr/buttonBarButtonStyle"
                     android:src="@android:drawable/ic_media_previous" />
 
                 <ImageButton
                     android:id="@+id/btn_play"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    style="?android:attr/buttonBarButtonStyle"
                     android:src="@android:drawable/ic_media_pause" />
 
                 <ImageButton
                     android:id="@+id/btn_next"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    style="?android:attr/buttonBarButtonStyle"
                     android:src="@android:drawable/ic_media_next" />
 
                 <ImageButton
                     android:id="@+id/btn_ff"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    style="?android:attr/buttonBarButtonStyle"
                     android:src="@android:drawable/ic_media_ff" />
             </LinearLayout>
 
@@ -125,6 +131,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:id="@+id/full_screen"
+                    style="?android:attr/buttonBarButtonStyle"
                     android:src="@android:drawable/ic_menu_slideshow" />
             </LinearLayout>
 

@@ -19,7 +19,7 @@ import android.widget.TextView;
 
 import com.wh.bear.bearmeiaplayer.bean.LrcView;
 import com.wh.bear.bearmeiaplayer.bean.Music;
-import com.wh.bear.bearmeiaplayer.utils.MediaThemeKeeper;
+import com.wh.bear.bearmeiaplayer.utils.MediaKeeper;
 import com.wh.bear.bearmeiaplayer.utils.StringUtils;
 
 import java.text.ParseException;
@@ -84,10 +84,10 @@ public class MusicPlayerActivity extends Activity {
         lrcView = (LrcView) findViewById(R.id.lrcShowView);
 
         //读取主题
-        int themeId = MediaThemeKeeper.readTheme(this);
+        int themeId = MediaKeeper.readTheme(this);
         changeTheme(music_layout, themeId);
         //读取播放模式
-        int model = MediaThemeKeeper.readPlaymodel(this);
+        int model = MediaKeeper.readPlaymodel(this);
         initModel(model);
         //设置电话监听
         TelephonyManager telManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE); // 获取系统服务
@@ -364,7 +364,7 @@ public class MusicPlayerActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        MediaThemeKeeper.writePlaymodel(this, music_model);
+        MediaKeeper.writePlaymodel(this, music_model);
     }
 
     /**

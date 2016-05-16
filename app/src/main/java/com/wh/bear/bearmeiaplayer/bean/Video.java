@@ -13,6 +13,7 @@ public class Video implements Parcelable{
     private long duration;
     private String url;
     private int currentProgress;
+    public boolean on;
 
 
     public Video(String title, String display_name, long duration, String url) {

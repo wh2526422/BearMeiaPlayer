@@ -8,7 +8,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,9 +18,8 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
 import android.widget.GridLayout;
 import android.widget.ImageView;
-import android.widget.Toast;
 
-import com.wh.bear.bearmeiaplayer.utils.MediaThemeKeeper;
+import com.wh.bear.bearmeiaplayer.utils.MediaKeeper;
 
 
 public class ThemeActivity extends Activity {
@@ -67,7 +65,7 @@ public class ThemeActivity extends Activity {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             int themeId = Integer.parseInt(imageView.getTag() + "");
-                            MediaThemeKeeper.writeTheme(ThemeActivity.this,themeId);
+                            MediaKeeper.writeTheme(ThemeActivity.this,themeId);
                         }
                     });
                     builder.setNegativeButton("取消", null);

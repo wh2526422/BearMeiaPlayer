@@ -6,7 +6,7 @@ import android.content.SharedPreferences;
 /**
  * Created by Administrator on 2015-10-13.
  */
-public class MediaThemeKeeper {
+public class MediaKeeper {
     /**
      * 保存主题id
      * @param context
@@ -17,7 +17,7 @@ public class MediaThemeKeeper {
         SharedPreferences theme = context.getSharedPreferences("theme", Context.MODE_PRIVATE);
         SharedPreferences.Editor edit = theme.edit();
         edit.putInt("themeId",themeid);
-        edit.commit();
+        edit.apply();
     }
 
     /**
@@ -27,8 +27,7 @@ public class MediaThemeKeeper {
      */
     public static int readTheme(Context context){
         SharedPreferences theme = context.getSharedPreferences("theme", Context.MODE_PRIVATE);
-        int themeId = theme.getInt("themeId", 0);
-        return themeId;
+        return theme.getInt("themeId", 0);
     }
 
     /**
@@ -40,7 +39,7 @@ public class MediaThemeKeeper {
         SharedPreferences theme = context.getSharedPreferences("model", Context.MODE_PRIVATE);
         SharedPreferences.Editor edit = theme.edit();
         edit.putInt("model",model);
-        edit.commit();
+        edit.apply();
     }
 
     /**
@@ -50,7 +49,28 @@ public class MediaThemeKeeper {
      */
     public static int readPlaymodel(Context context){
         SharedPreferences theme = context.getSharedPreferences("model", Context.MODE_PRIVATE);
-        int model = theme.getInt("model", 0);
-        return model;
+        return theme.getInt("model", 0);
+    }
+
+    /**
+     * 保存当前音量
+     * @param context
+     * @param streamVolume
+     */
+    public static void writeCurrentStreamVolume(Context context,int streamVolume) {
+        SharedPreferences theme = context.getSharedPreferences("streamVolume", Context.MODE_PRIVATE);
+        SharedPreferences.Editor edit = theme.edit();
+        edit.putInt("streamVolume",streamVolume);
+        edit.apply();
+    }
+
+    /**
+     * 读取播放模式
+     * @param context
+     * @return
+     */
+    public static int readCurrentStreamVolume(Context context){
+        SharedPreferences streamVolume = context.getSharedPreferences("streamVolume", Context.MODE_PRIVATE);
+        return streamVolume.getInt("streamVolume", 0);
     }
 }

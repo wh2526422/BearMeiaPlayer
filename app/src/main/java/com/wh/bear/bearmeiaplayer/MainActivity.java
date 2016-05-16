@@ -23,7 +23,7 @@ import com.wh.bear.bearmeiaplayer.adapter.MusicListAdapter;
 import com.wh.bear.bearmeiaplayer.adapter.VideoListAdapter;
 import com.wh.bear.bearmeiaplayer.bean.Music;
 import com.wh.bear.bearmeiaplayer.bean.Video;
-import com.wh.bear.bearmeiaplayer.utils.MediaThemeKeeper;
+import com.wh.bear.bearmeiaplayer.utils.MediaKeeper;
 import com.wh.bear.bearmeiaplayer.utils.SQLiteOptionHelper;
 
 import java.util.ArrayList;
@@ -57,7 +57,7 @@ MainActivity extends AppCompatActivity {
         scanner_switch = (Switch) findViewById(R.id.scanner_switch);
         changeTheme = (Button) findViewById(R.id.change_theme);
 
-        int themeId = MediaThemeKeeper.readTheme(this);
+        int themeId = MediaKeeper.readTheme(this);
         changeTheme(main_layout, themeId);
         receiver = new ChangeMusicSingFlagReceiver();
         registerReceiver(receiver, new IntentFilter("com.wh.changesingflag"));
@@ -136,7 +136,7 @@ MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 0x010) {
-            int theme = MediaThemeKeeper.readTheme(this);
+            int theme = MediaKeeper.readTheme(this);
             changeTheme(main_layout, theme);
         }
     }

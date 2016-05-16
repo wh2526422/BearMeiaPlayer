@@ -1,6 +1,5 @@
 package com.wh.bear.bearmeiaplayer;
 
-import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -8,6 +7,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -26,6 +26,7 @@ import android.widget.TextView;
 
 import com.wh.bear.bearmeiaplayer.adapter.PlayerListAdapter;
 import com.wh.bear.bearmeiaplayer.bean.Video;
+import com.wh.bear.bearmeiaplayer.utils.MediaKeeper;
 import com.wh.bear.bearmeiaplayer.utils.SQLiteOptionHelper;
 import com.wh.bear.bearmeiaplayer.utils.StringUtils;
 
@@ -38,46 +39,57 @@ import java.util.ArrayList;
  * Created by Administrator on 15-9-28.
  */
 public class VideoPlayerActivity extends AppCompatActivity implements MediaPlayer.OnPreparedListener,
-        MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnErrorListener, View.OnTouchListener,MediaPlayer.OnCompletionListener{
+        MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnErrorListener, View.OnTouchListener, MediaPlayer.OnCompletionListener,
+        View.OnClickListener, SurfaceHolder.Callback, SeekBar.OnSeekBarChangeListener, AdapterView.OnItemClickListener {
+    private static final String TAG = "VideoPlayerActivity";
+
+    private static final int HIDE_STATUS_BAR = 0x001;
+    private static final int UPDATE_PROGRESS = 0x002;
+
     SurfaceView player_screen;
     LinearLayout ctr_layout;
     SeekBar media_progress, sound_progress;
     ImageButton btn_sound, btn_rew, btn_previous, btn_play, btn_next, btn_ff;
-    ImageButton full_screen;//全屏按钮,视频铺满屏幕
+    ImageButton full_screen;                                        //  全屏按钮,视频铺满屏幕
     TextView current_time, end_time;
+    View videoList;
     MediaPlayer player;
     Display currDisplay;
-    AudioManager manager;
-    private int vWidh;//视频宽
-    private int vHeight;//视频高
-    int currentProgress;//播放视频的当前进度
-    long duration;//当前视频的时长
-    ListView video_list;//播放列表
-    Button btn_ctr_list;//控制列表隐藏显示
-    ArrayList<Video> data;//列表数据源
-    int firstPosition;//第一次播放视频的位置
-    int currentPosition;//当前播放视频的位置
-    SQLiteOptionHelper helper;//数据库操作助手
+    AudioManager mAudioManager;
+    private int vWidth;                                              //  视频宽
+    private int vHeight;                                            //  视频高
+    int currentProgress;                                            //  播放视频的当前进度
+    long duration;                                                  //  当前视频的时长
+    ListView video_list;                                            //  播放列表
+    Button btn_ctr_list;                                            //  控制列表隐藏显示
+    ArrayList<Video> data;                                          //  列表数据源
+    int currentPosition;                                            //  当前播放视频的位置
+    PlayerListAdapter adapter;
+    boolean videoListOpen = false;                                  //  视频列表是否在显示
+
     Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
-            //控制栏自动隐藏
-            if (msg.what == 0x001) {
-                ctr_layout.setVisibility(View.GONE);
-                btn_ctr_list.setVisibility(View.GONE);
-            }
-            //进度条自动更新
-            if (msg.what == 0x002) {
-                currentProgress = player.getCurrentPosition();
-                media_progress.setProgress(currentProgress);
-                try {
-                    current_time.setText(StringUtils.getVideoDuration(currentProgress));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-                if (currentProgress != duration) {
-                    sendEmptyMessageDelayed(0x002, 1000);
-                }
+            switch (msg.what) {
+                //控制栏自动隐藏
+                case HIDE_STATUS_BAR:
+                    ctr_layout.setVisibility(View.GONE);
+                    btn_ctr_list.setVisibility(View.GONE);
+                    break;
+                //进度条自动更新
+                case UPDATE_PROGRESS:
+                    try {
+                        currentProgress = player.getCurrentPosition();
+                        Log.i(TAG, "currentProgress\t" + currentProgress);
+                        media_progress.setProgress(currentProgress);
+                        current_time.setText(StringUtils.getVideoDuration(currentProgress));
+                        if (currentProgress != duration) {
+                            sendEmptyMessageDelayed(UPDATE_PROGRESS, 1000);
+                        }
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                    break;
             }
 
         }
@@ -88,235 +100,68 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
         super.onCreate(savedInstanceState);
         setContentView(R.layout.video_player_layout);
         initUi();
-        manager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
 
         if (savedInstanceState != null) {
             currentProgress = savedInstanceState.getInt("currentProgress");
         }
-        helper=new SQLiteOptionHelper(this,"videos",1);
-        Intent intent = getIntent();
-        Bundle bundle = intent.getExtras();
+
+        Bundle bundle = getIntent().getExtras();
         data = bundle.getParcelableArrayList("data_video");
+        currentPosition = bundle.getInt("firstPosition");
 
-        firstPosition = bundle.getInt("firstPosition");
-        currentPosition = firstPosition;
-        final String url = data.get(currentPosition).getUrl();
-        duration = data.get(currentPosition).getDuration();//获得视频时长
-        initStartView(duration);
-        //列表视图设置
-        setVideoList();
-
-        if (url != null) {
+        Video video = data.get(currentPosition);
+        if (video.getUrl() != null) {
+            video.on = true;
+            duration = video.getDuration();                             //获得视频时长
+            initStartView(duration);
+            //列表视图设置
+            setVideoList();
             player = new MediaPlayer();
             player.setOnPreparedListener(this);
             player.setOnSeekCompleteListener(this);
             player.setOnErrorListener(this);
             player.setOnCompletionListener(this);
             SurfaceHolder holder = player_screen.getHolder();
-
-            holder.addCallback(new SurfaceHolder.Callback() {
-                @Override
-                public void surfaceCreated(SurfaceHolder holder) {
-                    player.setDisplay(holder);
-                    try {
-                        startVideo(url);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-
-                @Override
-                public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
-                }
-
-                @Override
-                public void surfaceDestroyed(SurfaceHolder holder) {
-                    player.release();
-                }
-            });
-
-
+            holder.addCallback(this);
         }
         /**
          * 屏幕点击事件
          */
-        player_screen.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ctr_layout.setVisibility(View.VISIBLE);
-                btn_ctr_list.setVisibility(View.VISIBLE);
-                if (handler.hasMessages(0x001)) {
-                    handler.removeMessages(0x001);
-                }
-                handler.sendEmptyMessageDelayed(0x001, 5000);
-            }
-        });
+        player_screen.setOnClickListener(this);
         player_screen.setOnTouchListener(this);
         /**
          * 声音控制，总控制，静音
          */
-        btn_sound.setOnClickListener(new View.OnClickListener() {
-            int count = 0;
-
-            @Override
-            public void onClick(View v) {
-                if (count % 2 == 0) {
-                    ((ImageButton) v).setImageResource(android.R.drawable.ic_lock_silent_mode);
-                    count++;
-                    manager.setStreamMute(AudioManager.STREAM_MUSIC, true);
-                    sound_progress.setProgress(0);
-                } else {
-                    ((ImageButton) v).setImageResource(android.R.drawable.ic_lock_silent_mode_off);
-                    count++;
-                    manager.setStreamMute(AudioManager.STREAM_MUSIC, false);
-                    sound_progress.setProgress(manager.getStreamVolume(AudioManager.STREAM_MUSIC));
-                }
-            }
-        });
+        btn_sound.setOnClickListener(this);
         /**
          * 快退按钮
          */
-        btn_rew.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                if (player != null && currentProgress >= 5000) {
-                    if (handler.hasMessages(0x002)) {
-                        handler.removeMessages(0x002);
-                    }
-                    currentProgress -= 5000;
-                    player.seekTo(currentProgress);
-                    handler.sendEmptyMessage(0x002);
-                }
-            }
-        });
+        btn_rew.setOnClickListener(this);
         /**
          * 上一个视频
          */
-        btn_previous.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (player != null && currentPosition >= 1) {
-                    try {
-                        currentPosition -= 1;
-                        String url = data.get(currentPosition).getUrl();
-                        player.reset();
-                        startVideo(url);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
+        btn_previous.setOnClickListener(this);
         /**
          * 下一首
          */
-        btn_next.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (player != null && currentPosition < data.size() - 1) {
-                    try {
-                        currentPosition += 1;
-                        String url = data.get(currentPosition).getUrl();
-                        player.reset();
-                        startVideo(url);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
+        btn_next.setOnClickListener(this);
         /**
          * 快进按钮
          */
-        btn_ff.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (player != null && currentProgress <= duration - 5000) {
-                    if (handler.hasMessages(0x002)) {
-                        handler.removeMessages(0x002);
-                    }
-                    currentProgress += 5000;
-                    player.seekTo(currentProgress);
-                    handler.sendEmptyMessage(0x002);
-                }
-            }
-        });
+        btn_ff.setOnClickListener(this);
         /**
          * 播放按钮点击
          */
-        btn_play.setOnClickListener(new View.OnClickListener() {
-            int count = 0;
-
-            @Override
-            public void onClick(View v) {
-                if (count % 2 == 0) {
-                    ((ImageButton) v).setImageResource(android.R.drawable.ic_media_play);
-                    count++;
-                    if (player != null) {
-                        player.pause();
-                    }
-
-                } else {
-                    ((ImageButton) v).setImageResource(android.R.drawable.ic_media_pause);
-                    count++;
-                    if (player != null) {
-                        player.start();
-                    }
-                }
-            }
-        });
+        btn_play.setOnClickListener(this);
         /**
          * 进度条控制
          */
-        media_progress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                try {
-                    current_time.setText(StringUtils.getVideoDuration(progress));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                if (handler.hasMessages(0x002)) {
-                    handler.removeMessages(0x002);
-                }
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                int progress = seekBar.getProgress();
-                player.seekTo(progress);
-
-                handler.sendEmptyMessage(0x002);
-            }
-        });
+        media_progress.setOnSeekBarChangeListener(this);
         /**
          * 音量控制，局部
          */
-        sound_progress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                manager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
-
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
+        sound_progress.setOnSeekBarChangeListener(this);
 
     }
 
@@ -340,12 +185,13 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
         video_list = (ListView) findViewById(R.id.video_list);
         btn_ctr_list = (Button) findViewById(R.id.btn_ctr_list);
 
-        full_screen= (ImageButton) findViewById(R.id.full_screen);
+        full_screen = (ImageButton) findViewById(R.id.full_screen);
+
+        videoList = findViewById(R.id.list_layout);
 
         currDisplay = getWindowManager().getDefaultDisplay();
         // fullscreen
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     /**
@@ -353,78 +199,38 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
      */
     private void setVideoList() {
         if (data != null) {
-            PlayerListAdapter adapter = new PlayerListAdapter(this, data, firstPosition);
+            adapter = new PlayerListAdapter(this, data, currentPosition);
             video_list.setAdapter(adapter);
 
-            video_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                View currentView;
-
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    //第一次点击如果点击位置和当前播放位置不同
-                    if (position != firstPosition && firstPosition != -1) {
-                        video_list.getChildAt(firstPosition).findViewById(R.id.play_flag).setVisibility(View.GONE);
-                        firstPosition = -1;
-                    }
-                    view.findViewById(R.id.play_flag).setVisibility(View.VISIBLE);
-                    if (currentView != null && view != currentView) {
-                        currentView.findViewById(R.id.play_flag).setVisibility(View.GONE);
-                    }
-                    currentView = view;
-                    //播放当前点中项
-                    try {
-                        player.reset();
-                        startVideo(data.get(position).getUrl());
-                        duration = data.get(position).getDuration();
-                        initStartView(duration);
-                        handler.sendEmptyMessage(0x002);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
+            video_list.setOnItemClickListener(this);
             /**
              * 控制播放列表显示和隐藏
              */
-            btn_ctr_list.setOnClickListener(new View.OnClickListener() {
-                boolean open = false;
-
-                @Override
-                public void onClick(View v) {
-                    if (!open) {
-                        findViewById(R.id.list_layout).setVisibility(View.VISIBLE);
-                        open = true;
-                        btn_ctr_list.setText(R.string.hide);
-                    } else {
-                        findViewById(R.id.list_layout).setVisibility(View.GONE);
-                        open = false;
-                        btn_ctr_list.setText(R.string.show);
-                    }
-                }
-            });
+            btn_ctr_list.setOnClickListener(this);
             /**
              * 控制视频尺寸是否铺满屏幕
              */
             full_screen.setOnClickListener(new View.OnClickListener() {
-                int count=0;
+                int count = 0;
+
                 @Override
                 public void onClick(View v) {
-                    if (count%2==0){
+                    if (count % 2 == 0) {
                         player_screen.setLayoutParams(new FrameLayout.LayoutParams(currDisplay.getWidth(), currDisplay.getHeight(), Gravity.CENTER));
                         count++;
-                    }else {
-                        vWidh = player.getVideoWidth();
+                    } else {
+                        vWidth = player.getVideoWidth();
                         vHeight = player.getVideoHeight();
-                        if (vWidh > currDisplay.getWidth() || vHeight > currDisplay.getHeight()) {
+                        if (vWidth > currDisplay.getWidth() || vHeight > currDisplay.getHeight()) {
 
-                            float wRatio = (float) vWidh / (float) currDisplay.getWidth();
+                            float wRatio = (float) vWidth / (float) currDisplay.getWidth();
                             float hRatio = (float) vHeight / (float) currDisplay.getHeight();
 
                             float ratio = Math.max(hRatio, wRatio);
 
-                            vWidh = (int) Math.ceil((float) vWidh / ratio);
+                            vWidth = (int) Math.ceil((float) vWidth / ratio);
                             vHeight = (int) Math.ceil((float) vHeight / ratio);
-                            player_screen.setLayoutParams(new FrameLayout.LayoutParams(vWidh, vHeight, Gravity.CENTER));
+                            player_screen.setLayoutParams(new FrameLayout.LayoutParams(vWidth, vHeight, Gravity.CENTER));
                         }
                         count++;
                     }
@@ -434,6 +240,29 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
         }
     }
 
+    /**
+     * 当按上一首或者下一首时更新列表
+     *
+     * @param position
+     * @param adapter
+     */
+    private void changeVideoAndUpdateList(int position, PlayerListAdapter adapter) {
+        for (int i = 0; i < data.size(); i++) {
+            data.get(i).on = i == position;
+        }
+        adapter.setData(data);
+        adapter.notifyDataSetChanged();
+        //  播放当前点中项
+        try {
+            player.reset();
+            startVideo(data.get(position).getUrl());
+            duration = data.get(position).getDuration();
+            initStartView(duration);
+            handler.sendEmptyMessage(UPDATE_PROGRESS);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * 开始播放
@@ -454,30 +283,32 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
      */
     @Override
     public void onPrepared(MediaPlayer mp) {
-        vWidh = mp.getVideoWidth();
+        vWidth = mp.getVideoWidth();
         vHeight = mp.getVideoHeight();
-        if (vWidh > currDisplay.getWidth() || vHeight > currDisplay.getHeight()) {
+        if (vWidth > currDisplay.getWidth() || vHeight > currDisplay.getHeight()) {
 
-            float wRatio = (float) vWidh / (float) currDisplay.getWidth();
+            float wRatio = (float) vWidth / (float) currDisplay.getWidth();
             float hRatio = (float) vHeight / (float) currDisplay.getHeight();
 
             float ratio = Math.max(hRatio, wRatio);
 
-            vWidh = (int) Math.ceil((float) vWidh / ratio);
+            vWidth = (int) Math.ceil((float) vWidth / ratio);
             vHeight = (int) Math.ceil((float) vHeight / ratio);
-            player_screen.setLayoutParams(new FrameLayout.LayoutParams(vWidh, vHeight, Gravity.CENTER));
+            player_screen.setLayoutParams(new FrameLayout.LayoutParams(vWidth, vHeight, Gravity.CENTER));
             mp.start();
             //视频每次播放时跳转到历史位置
-            currentProgress=data.get(currentPosition).getCurrentProgress();
+            currentProgress = data.get(currentPosition).getCurrentProgress();
+            Log.i(TAG, "currentProgress\t" + currentProgress);
             mp.seekTo(currentProgress);
 
-            updateMediaprogress(mp);
+            updateMediaProgress(mp);
         } else {
             mp.start();
             //视频每次播放时跳转到历史位置
-            currentProgress=data.get(currentPosition).getCurrentProgress();
+            currentProgress = data.get(currentPosition).getCurrentProgress();
+            Log.i(TAG, "currentProgress\t" + currentProgress);
             mp.seekTo(currentProgress);
-            updateMediaprogress(mp);
+            updateMediaProgress(mp);
         }
     }
 
@@ -495,11 +326,11 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
 
     /**
      * 视频播放结束之后
+     *
      * @param mp
      */
     @Override
     public void onCompletion(MediaPlayer mp) {
-
         btn_play.setImageResource(android.R.drawable.ic_media_play);
     }
 
@@ -509,9 +340,9 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
         return true;
     }
 
-    public void updateMediaprogress(MediaPlayer mp) {
+    public void updateMediaProgress(MediaPlayer mp) {
         if (mp.isPlaying()) {
-            handler.sendEmptyMessage(0x002);
+            handler.sendEmptyMessage(UPDATE_PROGRESS);
         }
     }
 
@@ -523,13 +354,14 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
             btn_play.setImageResource(android.R.drawable.ic_media_pause);
         }
 
-        //设置进度条最大值
+        //  设置进度条最大值
+        Log.i(TAG, "initStartView\tduration" + ((int) duration));
         media_progress.setMax((int) duration);
         media_progress.setProgress(0);
-        //设置声音进度条最大值
-        sound_progress.setMax(manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
-        //设置进度条当前值
-        sound_progress.setProgress(manager.getStreamVolume(AudioManager.STREAM_MUSIC));
+        //  设置声音进度条最大值
+        sound_progress.setMax(mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
+        //  设置进度条当前值
+        sound_progress.setProgress(mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC));
 
         try {
             end_time.setText(StringUtils.getVideoDuration(duration));
@@ -542,31 +374,42 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
     protected void onPause() {
         super.onPause();
         //屏幕被覆盖之后播放停止，进度条停止更新
-        player.pause();
-        if (handler.hasMessages(0x002)) {
-            handler.removeMessages(0x002);
+        try {
+            player.pause();
+            if (handler.hasMessages(UPDATE_PROGRESS)) {
+                handler.removeMessages(UPDATE_PROGRESS);
+            }
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+            finish();
         }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        player.start();
-        handler.sendEmptyMessage(0x002);
+        try {
+            player.start();
+            handler.sendEmptyMessage(UPDATE_PROGRESS);
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+            finish();
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         //取消静音
-        manager.setStreamMute(AudioManager.STREAM_MUSIC, false);
-        if (handler.hasMessages(0x002)) {
-            handler.removeMessages(0x002);
+        mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
+        if (handler.hasMessages(UPDATE_PROGRESS)) {
+            handler.removeMessages(UPDATE_PROGRESS);
         }
         //将数据储存进入数据库
+        SQLiteOptionHelper helper = new SQLiteOptionHelper(this, "videos", 1);          //  数据库操作助手
         Video video = data.get(currentPosition);
         int l = helper.updateVideoProgress(video.getTitle(), currentProgress);
-        if (l<=0){
+        if (l <= 0) {
             video.setCurrentProgress(currentProgress);
             helper.setVideo(video);
         }
@@ -623,7 +466,6 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
                 break;
 
         }
-
         return false;
     }
 
@@ -645,4 +487,145 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
     }
 
 
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.player_screen:
+                ctr_layout.setVisibility(View.VISIBLE);
+                btn_ctr_list.setVisibility(View.VISIBLE);
+                if (handler.hasMessages(HIDE_STATUS_BAR)) {
+                    handler.removeMessages(HIDE_STATUS_BAR);
+                }
+                handler.sendEmptyMessageDelayed(HIDE_STATUS_BAR, 5000);
+                break;
+            case R.id.btn_rew:
+                if (player != null && currentProgress >= 5000) {
+                    if (handler.hasMessages(UPDATE_PROGRESS)) {
+                        handler.removeMessages(UPDATE_PROGRESS);
+                    }
+                    currentProgress -= 5000;
+                    player.seekTo(currentProgress);
+                    handler.sendEmptyMessage(UPDATE_PROGRESS);
+                }
+                break;
+            case R.id.btn_previous:
+                if (player != null && currentPosition >= 1) {
+                    btn_play.setImageResource(android.R.drawable.ic_media_pause);
+                    currentPosition -= 1;
+                    changeVideoAndUpdateList(currentPosition, adapter);
+                }
+                break;
+            case R.id.btn_next:
+                if (player != null && currentPosition < data.size() - 1) {
+                    btn_play.setImageResource(android.R.drawable.ic_media_pause);
+                    currentPosition += 1;
+                    changeVideoAndUpdateList(currentPosition, adapter);
+                }
+                break;
+            case R.id.btn_ff:
+                if (player != null && currentProgress <= duration - 5000) {
+                    if (handler.hasMessages(UPDATE_PROGRESS)) {
+                        handler.removeMessages(UPDATE_PROGRESS);
+                    }
+                    currentProgress += 5000;
+                    player.seekTo(currentProgress);
+                    handler.sendEmptyMessage(UPDATE_PROGRESS);
+                }
+                break;
+            case R.id.btn_play:
+                if (player != null) {
+                    if (player.isPlaying()) {
+                        ((ImageButton) v).setImageResource(android.R.drawable.ic_media_play);
+                        player.pause();
+                    } else {
+                        ((ImageButton) v).setImageResource(android.R.drawable.ic_media_pause);
+                        player.start();
+                    }
+                }
+                break;
+            case R.id.btn_sound:
+                int streamVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                if (streamVolume == 0) {
+                    ((ImageButton) v).setImageResource(android.R.drawable.ic_lock_silent_mode_off);
+                    mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
+                    sound_progress.setProgress(MediaKeeper.readCurrentStreamVolume(VideoPlayerActivity.this));
+                } else {
+                    MediaKeeper.writeCurrentStreamVolume(VideoPlayerActivity.this, streamVolume);
+                    ((ImageButton) v).setImageResource(android.R.drawable.ic_lock_silent_mode);
+                    mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, true);
+                    sound_progress.setProgress(0);
+                }
+                break;
+            case R.id.btn_ctr_list:
+
+                if (!videoListOpen) {
+                    videoList.setVisibility(View.VISIBLE);
+                    videoListOpen = true;
+                    btn_ctr_list.setText(R.string.hide);
+                } else {
+                    videoList.setVisibility(View.GONE);
+                    videoListOpen = false;
+                    btn_ctr_list.setText(R.string.show);
+                }
+                break;
+        }
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        Log.i(TAG, "surfaceCreated");
+        player.setDisplay(holder);
+        player.reset();
+        try {
+            startVideo(data.get(currentPosition).getUrl());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        player.release();
+    }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        switch (seekBar.getId()) {
+            case R.id.media_progress:
+                try {
+                    current_time.setText(StringUtils.getVideoDuration(progress));
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+                break;
+            case R.id.sound_progress:
+                mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
+                break;
+        }
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+        if (handler.hasMessages(UPDATE_PROGRESS)) {
+            handler.removeMessages(UPDATE_PROGRESS);
+        }
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+        int progress = seekBar.getProgress();
+        player.seekTo(progress);
+
+        handler.sendEmptyMessage(UPDATE_PROGRESS);
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        changeVideoAndUpdateList(position, adapter);
+    }
 }
