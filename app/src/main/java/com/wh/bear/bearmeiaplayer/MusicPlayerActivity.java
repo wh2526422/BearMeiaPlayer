@@ -22,6 +22,7 @@ import com.wh.bear.bearmeiaplayer.bean.Music;
 import com.wh.bear.bearmeiaplayer.utils.MediaKeeper;
 import com.wh.bear.bearmeiaplayer.utils.StringUtils;
 
+import java.io.BufferedReader;
 import java.text.ParseException;
 import java.util.ArrayList;
 
@@ -32,6 +33,7 @@ public class MusicPlayerActivity extends Activity {
 
     private static final int PROGRESS_UPDATE = 0x101;
     private static final int DURATION_UPDATE = 0x102;
+    private static final int PLAY_OVER = 0x103;
 
     LinearLayout music_layout;
     public static LrcView lrcView;
@@ -61,6 +63,13 @@ public class MusicPlayerActivity extends Activity {
                 case DURATION_UPDATE:
                     Music music = data_music.get(currentPosition);
                     initStartView(music.getDuration(), music.getTilte());
+                    break;
+                case PLAY_OVER:
+                    music_play.setImageResource(android.R.drawable.ic_media_play);
+                    music_progress.setProgress(0);
+                    lrcView.setmLrcList(null);
+                    lrcView.invalidate();
+                    currentPosition = data_music.size() -1;
                     break;
             }
         }
@@ -308,7 +317,11 @@ public class MusicPlayerActivity extends Activity {
             int next = intent.getIntExtra("next", -1);
             if (next != -1) {
                 currentPosition = next;
-                handler.sendEmptyMessage(DURATION_UPDATE);
+                if (data_music != null && currentPosition == data_music.size()){
+                    handler.sendEmptyMessage(PLAY_OVER);
+                } else {
+                    handler.sendEmptyMessage(DURATION_UPDATE);
+                }
             }
         }
     }

@@ -37,8 +37,8 @@ MainActivity extends AppCompatActivity {
     Button changeTheme;
     ArrayList<Video> data_video = new ArrayList<>();
     ArrayList<Music> data_music = new ArrayList<>();
-    boolean ifVedioScanned = false;//标识视频是否已经被扫描过
-    boolean ifMusicScanned = false;//标识音乐是否被扫描过
+    boolean ifVideoScanned = false;                                         //  标识视频是否已经被扫描过
+    boolean ifMusicScanned = false;                                         //  标识音乐是否被扫描过
     ChangeMusicSingFlagReceiver receiver;
     MusicListAdapter mAdapter;
     VideoListAdapter vAdapter;
@@ -144,8 +144,8 @@ MainActivity extends AppCompatActivity {
     /**
      * 改变主题
      *
-     * @param main_layout
-     * @param themeId
+     * @param main_layout 布局
+     * @param themeId 主题ID
      */
     private void changeTheme(LinearLayout main_layout, int themeId) {
         switch (themeId) {
@@ -199,7 +199,9 @@ MainActivity extends AppCompatActivity {
 
                 data_music.add(music);
             }
-            cursor.close();
+            if (cursor != null) {
+                cursor.close();
+            }
             ifMusicScanned = true;
         }
         if (data_music.size() > 0 && currentPosition != -1) data_music.get(currentPosition).singing = true;
@@ -211,7 +213,7 @@ MainActivity extends AppCompatActivity {
      * 扫描视频
      */
     private void scannerVideo() {
-        if (!ifVedioScanned) {
+        if (!ifVideoScanned) {
             SQLiteOptionHelper helper = new SQLiteOptionHelper(this, "vedios", 1);
             data_video = helper.getVideos();
             if (data_video.size() == 0 && Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
@@ -239,7 +241,7 @@ MainActivity extends AppCompatActivity {
                 media_list.setAdapter(vAdapter);
             }
 
-            ifVedioScanned = true;
+            ifVideoScanned = true;
         }
 
         vAdapter = new VideoListAdapter(this, data_video);
@@ -264,8 +266,8 @@ MainActivity extends AppCompatActivity {
     /**
      * 刷新音乐列表
      *
-     * @param position
-     * @param play
+     * @param position 要刷新到的播放位置
+     * @param play 是否处于播放状态
      */
     private void refreshMusicList(int position, boolean play) {
         currentPosition = position;

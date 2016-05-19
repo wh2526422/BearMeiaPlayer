@@ -1,5 +1,6 @@
 package com.wh.bear.bearmeiaplayer.bean;
 
+import android.graphics.Bitmap;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -8,6 +9,9 @@ import android.os.Parcelable;
  */
 public class Video implements Parcelable{
 
+
+
+    private Bitmap icon;
     private String title;
     private String display_name;
     private long duration;
@@ -94,6 +98,13 @@ public class Video implements Parcelable{
         this.currentProgress = currentProgress;
     }
 
+    public Bitmap getIcon() {
+        return icon;
+    }
+
+    public void setIcon(Bitmap icon) {
+        this.icon = icon;
+    }
     @Override
     public int describeContents() {
         return 0;

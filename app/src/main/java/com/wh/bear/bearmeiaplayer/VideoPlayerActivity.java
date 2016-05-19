@@ -1,9 +1,16 @@
 package com.wh.bear.bearmeiaplayer;
 
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
@@ -19,11 +26,14 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.wh.bear.bearmeiaplayer.adapter.OnSeekBarChangeListenerAdapter;
 import com.wh.bear.bearmeiaplayer.adapter.PlayerListAdapter;
 import com.wh.bear.bearmeiaplayer.bean.Video;
 import com.wh.bear.bearmeiaplayer.utils.MediaKeeper;
@@ -40,23 +50,24 @@ import java.util.ArrayList;
  */
 public class VideoPlayerActivity extends AppCompatActivity implements MediaPlayer.OnPreparedListener,
         MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnErrorListener, View.OnTouchListener, MediaPlayer.OnCompletionListener,
-        View.OnClickListener, SurfaceHolder.Callback, SeekBar.OnSeekBarChangeListener, AdapterView.OnItemClickListener {
+        View.OnClickListener, SurfaceHolder.Callback, AdapterView.OnItemClickListener {
     private static final String TAG = "VideoPlayerActivity";
 
     private static final int HIDE_STATUS_BAR = 0x001;
     private static final int UPDATE_PROGRESS = 0x002;
 
     SurfaceView player_screen;
-    LinearLayout ctr_layout;
+    LinearLayout ctr_layout,video_play_header_view;
     SeekBar media_progress, sound_progress;
     ImageButton btn_sound, btn_rew, btn_previous, btn_play, btn_next, btn_ff;
-    ImageButton full_screen;                                        //  全屏按钮,视频铺满屏幕
+    ImageButton full_screen;                        //  全屏按钮,视频铺满屏幕
+    Button btn_float_play,btn_back;
     TextView current_time, end_time;
     View videoList;
     MediaPlayer player;
     Display currDisplay;
     AudioManager mAudioManager;
-    private int vWidth;                                              //  视频宽
+    private int vWidth;                                             //  视频宽
     private int vHeight;                                            //  视频高
     int currentProgress;                                            //  播放视频的当前进度
     long duration;                                                  //  当前视频的时长
@@ -66,6 +77,8 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
     int currentPosition;                                            //  当前播放视频的位置
     PlayerListAdapter adapter;
     boolean videoListOpen = false;                                  //  视频列表是否在显示
+    boolean isFullScreen;
+    VolumeReceiver mVolumeReceiver;                                 //  音量监听
 
     Handler handler = new Handler() {
         @Override
@@ -75,6 +88,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
                 case HIDE_STATUS_BAR:
                     ctr_layout.setVisibility(View.GONE);
                     btn_ctr_list.setVisibility(View.GONE);
+                    video_play_header_view.setVisibility(View.INVISIBLE);
                     break;
                 //进度条自动更新
                 case UPDATE_PROGRESS:
@@ -154,15 +168,50 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
          * 播放按钮点击
          */
         btn_play.setOnClickListener(this);
+
+        btn_back.setOnClickListener(this);
+        /**
+         * 悬浮播放
+         */
+        btn_float_play.setOnClickListener(this);
         /**
          * 进度条控制
          */
-        media_progress.setOnSeekBarChangeListener(this);
+        media_progress.setOnSeekBarChangeListener(new OnSeekBarChangeListenerAdapter() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                try {
+                    current_time.setText(StringUtils.getVideoDuration(progress));
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                if (handler.hasMessages(UPDATE_PROGRESS)) {
+                    handler.removeMessages(UPDATE_PROGRESS);
+                }
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                int progress = seekBar.getProgress();
+                player.seekTo(progress);
+                handler.sendEmptyMessage(UPDATE_PROGRESS);
+            }
+        });
         /**
          * 音量控制，局部
          */
-        sound_progress.setOnSeekBarChangeListener(this);
+        sound_progress.setOnSeekBarChangeListener(new OnSeekBarChangeListenerAdapter() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
+            }
+        });
 
+        registerVolumeReceiver();
     }
 
     private void initUi() {
@@ -189,9 +238,14 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
 
         videoList = findViewById(R.id.list_layout);
 
+        video_play_header_view = (LinearLayout) findViewById(R.id.video_play_header_view);
+        btn_back = (Button) findViewById(R.id.btn_back);
+        btn_float_play = (Button) findViewById(R.id.btn_float_play);
+
         currDisplay = getWindowManager().getDefaultDisplay();
         // fullscreen
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
+                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     /**
@@ -210,32 +264,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
             /**
              * 控制视频尺寸是否铺满屏幕
              */
-            full_screen.setOnClickListener(new View.OnClickListener() {
-                int count = 0;
-
-                @Override
-                public void onClick(View v) {
-                    if (count % 2 == 0) {
-                        player_screen.setLayoutParams(new FrameLayout.LayoutParams(currDisplay.getWidth(), currDisplay.getHeight(), Gravity.CENTER));
-                        count++;
-                    } else {
-                        vWidth = player.getVideoWidth();
-                        vHeight = player.getVideoHeight();
-                        if (vWidth > currDisplay.getWidth() || vHeight > currDisplay.getHeight()) {
-
-                            float wRatio = (float) vWidth / (float) currDisplay.getWidth();
-                            float hRatio = (float) vHeight / (float) currDisplay.getHeight();
-
-                            float ratio = Math.max(hRatio, wRatio);
-
-                            vWidth = (int) Math.ceil((float) vWidth / ratio);
-                            vHeight = (int) Math.ceil((float) vHeight / ratio);
-                            player_screen.setLayoutParams(new FrameLayout.LayoutParams(vWidth, vHeight, Gravity.CENTER));
-                        }
-                        count++;
-                    }
-                }
-            });
+            full_screen.setOnClickListener(this);
 
         }
     }
@@ -243,8 +272,8 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
     /**
      * 当按上一首或者下一首时更新列表
      *
-     * @param position
-     * @param adapter
+     * @param position 切换的歌曲位置
+     * @param adapter 含有资源的适配器
      */
     private void changeVideoAndUpdateList(int position, PlayerListAdapter adapter) {
         for (int i = 0; i < data.size(); i++) {
@@ -332,6 +361,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
     @Override
     public void onCompletion(MediaPlayer mp) {
         btn_play.setImageResource(android.R.drawable.ic_media_play);
+        finish();
     }
 
     @Override
@@ -413,7 +443,9 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
             video.setCurrentProgress(currentProgress);
             helper.setVideo(video);
         }
-
+        if (mVolumeReceiver != null) {
+            unregisterReceiver(mVolumeReceiver);
+        }
     }
 
     float downX;
@@ -493,6 +525,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
             case R.id.player_screen:
                 ctr_layout.setVisibility(View.VISIBLE);
                 btn_ctr_list.setVisibility(View.VISIBLE);
+                video_play_header_view.setVisibility(View.VISIBLE);
                 if (handler.hasMessages(HIDE_STATUS_BAR)) {
                     handler.removeMessages(HIDE_STATUS_BAR);
                 }
@@ -513,6 +546,8 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
                     btn_play.setImageResource(android.R.drawable.ic_media_pause);
                     currentPosition -= 1;
                     changeVideoAndUpdateList(currentPosition, adapter);
+                } else {
+                    Toast.makeText(VideoPlayerActivity.this, "已经是第一个", Toast.LENGTH_SHORT).show();
                 }
                 break;
             case R.id.btn_next:
@@ -520,6 +555,8 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
                     btn_play.setImageResource(android.R.drawable.ic_media_pause);
                     currentPosition += 1;
                     changeVideoAndUpdateList(currentPosition, adapter);
+                } else {
+                    Toast.makeText(VideoPlayerActivity.this, "已经是最后一个", Toast.LENGTH_SHORT).show();
                 }
                 break;
             case R.id.btn_ff:
@@ -542,6 +579,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
                         player.start();
                     }
                 }
+
                 break;
             case R.id.btn_sound:
                 int streamVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -567,6 +605,32 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
                     videoListOpen = false;
                     btn_ctr_list.setText(R.string.show);
                 }
+                break;
+            case R.id.full_screen:
+                if (isFullScreen) {
+                    vWidth = player.getVideoWidth();
+                    vHeight = player.getVideoHeight();
+                    if (vWidth > currDisplay.getWidth() || vHeight > currDisplay.getHeight()) {
+
+                        float wRatio = (float) vWidth / (float) currDisplay.getWidth();
+                        float hRatio = (float) vHeight / (float) currDisplay.getHeight();
+
+                        float ratio = Math.max(hRatio, wRatio);
+
+                        vWidth = (int) Math.ceil((float) vWidth / ratio);
+                        vHeight = (int) Math.ceil((float) vHeight / ratio);
+                        player_screen.setLayoutParams(new FrameLayout.LayoutParams(vWidth, vHeight, Gravity.CENTER));
+                    }
+                    isFullScreen = false;
+                } else {
+                    player_screen.setLayoutParams(new FrameLayout.LayoutParams(currDisplay.getWidth(), currDisplay.getHeight(), Gravity.CENTER));
+                    isFullScreen = true;
+                }
+                break;
+            case R.id.btn_float_play:
+                startActivity(new Intent(this,FloatVideoPlayService.class).putExtra("video",data.get(currentPosition)));
+            case R.id.btn_back:
+                finish();
                 break;
         }
     }
@@ -594,38 +658,34 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
     }
 
     @Override
-    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        switch (seekBar.getId()) {
-            case R.id.media_progress:
-                try {
-                    current_time.setText(StringUtils.getVideoDuration(progress));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-                break;
-            case R.id.sound_progress:
-                mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
-                break;
-        }
-    }
-
-    @Override
-    public void onStartTrackingTouch(SeekBar seekBar) {
-        if (handler.hasMessages(UPDATE_PROGRESS)) {
-            handler.removeMessages(UPDATE_PROGRESS);
-        }
-    }
-
-    @Override
-    public void onStopTrackingTouch(SeekBar seekBar) {
-        int progress = seekBar.getProgress();
-        player.seekTo(progress);
-
-        handler.sendEmptyMessage(UPDATE_PROGRESS);
-    }
-
-    @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         changeVideoAndUpdateList(position, adapter);
     }
+
+    /**
+     * 注册音量监听
+     */
+    private void registerVolumeReceiver() {
+        mVolumeReceiver = new VolumeReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("android.media.VOLUME_CHANGED_ACTION");
+        registerReceiver(mVolumeReceiver, filter);
+    }
+
+    /**
+     * 监听系统音量变化而改变音量进度的广播
+     */
+    private class VolumeReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            //如果音量发生变化则更改seekbar的位置
+            if (intent.getAction().equals("android.media.VOLUME_CHANGED_ACTION")) {
+                int currVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);// 当前的媒体音量
+                sound_progress.setProgress(currVolume);
+            }
+        }
+    }
+
+
 }

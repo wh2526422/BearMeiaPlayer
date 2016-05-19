@@ -12,4 +12,6 @@
     <string name="changetheme">主题</string>
     <string name="choosetheme">请选择主题:</string>
     <string name="hint">点击图片可预览，长按选择</string>
+    <string name="play_on_float_view">桌面播放</string>
+    <string name="back">返回</string>
 </resources>

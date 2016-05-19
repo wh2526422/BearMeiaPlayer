@@ -185,7 +185,6 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                 currentPosition++;
                 if (currentPosition == data_music.size()) {
                     pause();
-                    return;
                 }
                 break;
             case 1:
@@ -213,11 +212,13 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     /**
      * 当切换下首歌时更新ui
      */
-    private void updateUiWhenNext(int currentPosition) {
-        setPositionPlay(currentPosition);
+    private void updateUiWhenNext(int position) {
+        if (position != data_music.size()) {
+            setPositionPlay(position);
+        }
         //每次播放结束开始下一首歌时发送广播更新界面
         Intent receiver = new Intent("com.iotek.bearmediaplayer.MusicBroadcastReiceiver");
-        receiver.putExtra("next", currentPosition);
+        receiver.putExtra("next", position == data_music.size() ? currentPosition-- : position);
         sendBroadcast(receiver);
     }
 

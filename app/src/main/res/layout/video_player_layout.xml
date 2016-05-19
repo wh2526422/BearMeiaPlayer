@@ -32,7 +32,7 @@
                 android:textColor="@android:color/white"/>
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1" />
 
@@ -171,6 +171,34 @@
             style="@style/Widget.AppCompat.Toolbar.Button.Navigation"
             android:id="@+id/btn_ctr_list"
             android:visibility="gone"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/video_play_header_view"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|top"
+        android:background="@android:color/black"
+        android:alpha="0.7"
+        android:visibility="gone">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:id="@+id/btn_back"
+            android:text="@string/back"
+            style="?android:attr/buttonBarButtonStyle"/>
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:id="@+id/btn_float_play"
+            android:text="@string/play_on_float_view"
+            style="?android:attr/buttonBarButtonStyle"/>
     </LinearLayout>
 
 </FrameLayout>
