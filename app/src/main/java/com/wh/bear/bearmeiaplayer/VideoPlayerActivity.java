@@ -1,16 +1,13 @@
 package com.wh.bear.bearmeiaplayer;
 
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
@@ -26,7 +23,6 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SeekBar;
@@ -37,7 +33,6 @@ import com.wh.bear.bearmeiaplayer.adapter.OnSeekBarChangeListenerAdapter;
 import com.wh.bear.bearmeiaplayer.adapter.PlayerListAdapter;
 import com.wh.bear.bearmeiaplayer.bean.Video;
 import com.wh.bear.bearmeiaplayer.utils.MediaKeeper;
-import com.wh.bear.bearmeiaplayer.utils.SQLiteOptionHelper;
 import com.wh.bear.bearmeiaplayer.utils.StringUtils;
 
 import java.io.IOException;
@@ -49,7 +44,7 @@ import java.util.ArrayList;
  * Created by Administrator on 15-9-28.
  */
 public class VideoPlayerActivity extends AppCompatActivity implements MediaPlayer.OnPreparedListener,
-        MediaPlayer.OnSeekCompleteListener, MediaPlayer.OnErrorListener, View.OnTouchListener, MediaPlayer.OnCompletionListener,
+        MediaPlayer.OnErrorListener, View.OnTouchListener, MediaPlayer.OnCompletionListener,
         View.OnClickListener, SurfaceHolder.Callback, AdapterView.OnItemClickListener {
     private static final String TAG = "VideoPlayerActivity";
 
@@ -133,7 +128,6 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
             setVideoList();
             player = new MediaPlayer();
             player.setOnPreparedListener(this);
-            player.setOnSeekCompleteListener(this);
             player.setOnErrorListener(this);
             player.setOnCompletionListener(this);
             SurfaceHolder holder = player_screen.getHolder();
@@ -326,7 +320,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
             player_screen.setLayoutParams(new FrameLayout.LayoutParams(vWidth, vHeight, Gravity.CENTER));
             mp.start();
             //视频每次播放时跳转到历史位置
-            currentProgress = data.get(currentPosition).getCurrentProgress();
+            currentProgress = MediaKeeper.readVideoHistotyProgress(this,data.get(currentPosition).getTitle());
             Log.i(TAG, "currentProgress\t" + currentProgress);
             mp.seekTo(currentProgress);
 
@@ -334,23 +328,11 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
         } else {
             mp.start();
             //视频每次播放时跳转到历史位置
-            currentProgress = data.get(currentPosition).getCurrentProgress();
+            currentProgress = MediaKeeper.readVideoHistotyProgress(this,data.get(currentPosition).getTitle());
             Log.i(TAG, "currentProgress\t" + currentProgress);
             mp.seekTo(currentProgress);
             updateMediaProgress(mp);
         }
-    }
-
-
-    /**
-     * 拖动进度条后
-     *
-     * @param mp
-     */
-    @Override
-    public void onSeekComplete(MediaPlayer mp) {
-        // TODO: 15-10-9
-
     }
 
     /**
@@ -436,13 +418,8 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
             handler.removeMessages(UPDATE_PROGRESS);
         }
         //将数据储存进入数据库
-        SQLiteOptionHelper helper = new SQLiteOptionHelper(this, "videos", 1);          //  数据库操作助手
-        Video video = data.get(currentPosition);
-        int l = helper.updateVideoProgress(video.getTitle(), currentProgress);
-        if (l <= 0) {
-            video.setCurrentProgress(currentProgress);
-            helper.setVideo(video);
-        }
+        MediaKeeper.writeVideoHistotyProgress(this,currentProgress,data.get(currentPosition).getTitle());
+
         if (mVolumeReceiver != null) {
             unregisterReceiver(mVolumeReceiver);
         }

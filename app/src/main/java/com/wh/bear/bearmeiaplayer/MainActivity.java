@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -24,12 +23,10 @@ import com.wh.bear.bearmeiaplayer.adapter.VideoListAdapter;
 import com.wh.bear.bearmeiaplayer.bean.Music;
 import com.wh.bear.bearmeiaplayer.bean.Video;
 import com.wh.bear.bearmeiaplayer.utils.MediaKeeper;
-import com.wh.bear.bearmeiaplayer.utils.SQLiteOptionHelper;
 
 import java.util.ArrayList;
 
-public class
-MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
     LinearLayout main_layout;
     ListView media_list;
     ImageButton btn_add;
@@ -49,7 +46,7 @@ MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        currentPosition = getIntent().getIntExtra("currentPosition", -1);
+        int notifyPosition = getIntent().getIntExtra("currentPosition", -1);
 
         main_layout = (LinearLayout) findViewById(R.id.main_layout);
         media_list = (ListView) findViewById(R.id.media_list);
@@ -66,7 +63,7 @@ MainActivity extends AppCompatActivity {
         if (scanner_switch.isChecked()) {
             scannerVideo();
         } else {
-            scannerMusic();
+            scannerMusic(notifyPosition);
         }
         /**
          * 监听开关的转换
@@ -77,7 +74,7 @@ MainActivity extends AppCompatActivity {
                 if (isChecked) {
                     scannerVideo();
                 } else {
-                    scannerMusic();
+                    scannerMusic(-1);
                 }
             }
         });
@@ -98,7 +95,7 @@ MainActivity extends AppCompatActivity {
 
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                refreshMusicList(position, true);
+
                 //点击视频listview
                 if (scanner_switch.isChecked()) {
                     Intent intent = new Intent(MainActivity.this, VideoPlayerActivity.class);
@@ -108,6 +105,7 @@ MainActivity extends AppCompatActivity {
                     intent.putExtras(bundle);
                     startActivity(intent);
                 } else {
+                    refreshMusicList(position, true);
                     Intent intent = new Intent(MainActivity.this, MusicPlayerActivity.class);
                     Bundle bundle = new Bundle();
                     bundle.putParcelableArrayList("data_music", data_music);
@@ -145,7 +143,7 @@ MainActivity extends AppCompatActivity {
      * 改变主题
      *
      * @param main_layout 布局
-     * @param themeId 主题ID
+     * @param themeId     主题ID
      */
     private void changeTheme(LinearLayout main_layout, int themeId) {
         switch (themeId) {
@@ -172,8 +170,9 @@ MainActivity extends AppCompatActivity {
 
     /**
      * 扫描音乐
+     * @param notifyPosition
      */
-    private void scannerMusic() {
+    private void scannerMusic(int notifyPosition) {
         if (!ifMusicScanned) {
             ContentResolver resolver = getContentResolver();
             Cursor cursor = resolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
@@ -204,7 +203,9 @@ MainActivity extends AppCompatActivity {
             }
             ifMusicScanned = true;
         }
-        if (data_music.size() > 0 && currentPosition != -1) data_music.get(currentPosition).singing = true;
+        if (data_music.size() > 0 && notifyPosition != -1) {
+            data_music.get(notifyPosition).singing = true;
+        }
         mAdapter = new MusicListAdapter(data_music, this);
         media_list.setAdapter(mAdapter);
     }
@@ -214,37 +215,32 @@ MainActivity extends AppCompatActivity {
      */
     private void scannerVideo() {
         if (!ifVideoScanned) {
-            SQLiteOptionHelper helper = new SQLiteOptionHelper(this, "vedios", 1);
-            data_video = helper.getVideos();
-            if (data_video.size() == 0 && Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                ContentResolver resolver = getContentResolver();
-                String[] projection = {MediaStore.Video.Media.TITLE, MediaStore.Video.Media.DISPLAY_NAME,
-                        MediaStore.Video.Media.DURATION, MediaStore.Video.Media.DATA};
-                Cursor cursor = resolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, projection, null, null, null);
+            ContentResolver resolver = getContentResolver();
+            String[] projection = {MediaStore.Video.Media.TITLE, MediaStore.Video.Media.DISPLAY_NAME,
+                    MediaStore.Video.Media.DURATION, MediaStore.Video.Media.DATA};
+            Cursor cursor = resolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, projection, null, null, null);
 
-                while (cursor != null && cursor.moveToNext()) {
+            while (cursor != null && cursor.moveToNext()) {
 
-                    String title = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.TITLE));
-                    String display_name = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DISPLAY_NAME));
-                    long duration = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.DURATION));
-                    String url = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA));
+                String title = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.TITLE));
+                String display_name = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DISPLAY_NAME));
+                long duration = cursor.getLong(cursor.getColumnIndex(MediaStore.Video.Media.DURATION));
+                String url = cursor.getString(cursor.getColumnIndex(MediaStore.Video.Media.DATA));
 
-                    Video video = new Video(title, display_name, duration, url);
-
-                    data_video.add(video);
-                }
-                if (cursor != null) {
-                    cursor.close();
-                }
-                helper.setVideos(data_video);
-                VideoListAdapter vAdapter = new VideoListAdapter(this, data_video);
-                media_list.setAdapter(vAdapter);
+                Video video = new Video(title, display_name, duration, url);
+                data_video.add(video);
             }
+            if (cursor != null) {
+                cursor.close();
+            }
+
+            VideoListAdapter vAdapter = new VideoListAdapter(this, data_video,media_list);
+            media_list.setAdapter(vAdapter);
 
             ifVideoScanned = true;
         }
 
-        vAdapter = new VideoListAdapter(this, data_video);
+        vAdapter = new VideoListAdapter(this, data_video,media_list);
         media_list.setAdapter(vAdapter);
     }
 
@@ -267,7 +263,7 @@ MainActivity extends AppCompatActivity {
      * 刷新音乐列表
      *
      * @param position 要刷新到的播放位置
-     * @param play 是否处于播放状态
+     * @param play     是否处于播放状态
      */
     private void refreshMusicList(int position, boolean play) {
         currentPosition = position;

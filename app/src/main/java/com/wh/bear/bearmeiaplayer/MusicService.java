@@ -96,7 +96,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
      */
     private void playOrpauseControl(Intent intent) {
         String data = intent != null ? intent.getStringExtra("data") : null;
-        if (data != null) {
+        if (data != null && data_music != null) {
             switch (data) {
                 case "pause":
                     pause();

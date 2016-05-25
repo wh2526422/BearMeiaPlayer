@@ -73,7 +73,7 @@ public class FloatVideoPlayService extends Activity implements MediaPlayer.OnPre
                         if (currentProgress != duration) {
                             sendEmptyMessageDelayed(UPDATE_PROGRESS, 1000);
                         }
-                    } catch (ParseException e) {
+                    } catch (ParseException | IllegalStateException e) {
                         e.printStackTrace();
                     }
                     break;

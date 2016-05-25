@@ -3,19 +3,19 @@ package com.wh.bear.bearmeiaplayer.adapter;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.media.ThumbnailUtils;
 import android.os.Build;
-import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 
 
 import com.wh.bear.bearmeiaplayer.R;
 import com.wh.bear.bearmeiaplayer.bean.Video;
+import com.wh.bear.bearmeiaplayer.utils.LoadVideoThumbnail;
 import com.wh.bear.bearmeiaplayer.utils.StringUtils;
 
 import java.text.ParseException;
@@ -27,10 +27,15 @@ import java.util.ArrayList;
 public class VideoListAdapter extends BaseAdapter {
     Context context;
     ArrayList<Video> data;
+    LoadVideoThumbnail loader;
+    ListView mListView;
 
-    public VideoListAdapter(Context context, ArrayList<Video> data) {
+    public VideoListAdapter(Context context, ArrayList<Video> data, ListView listView) {
         this.context = context;
         this.data = data;
+        this.mListView = listView;
+        loader = LoadVideoThumbnail.getInstance();
+        loader.cancelAllTasksAndCleanData();
     }
 
     @Override
@@ -54,7 +59,6 @@ public class VideoListAdapter extends BaseAdapter {
         Holder holder;
 
         if (convertView == null) {
-
             convertView = LayoutInflater.from(context).inflate(R.layout.media_item, parent, false);
             ImageView icon = (ImageView) convertView.findViewById(R.id.mIcon);
             TextView title = (TextView) convertView.findViewById(R.id.mTitle);
@@ -68,9 +72,23 @@ public class VideoListAdapter extends BaseAdapter {
         }
 
         Video video = data.get(position);
-        Bitmap source = ThumbnailUtils.createVideoThumbnail(video.getUrl(), MediaStore.Video.Thumbnails.MICRO_KIND);
-        Bitmap bitmap = ThumbnailUtils.extractThumbnail(source, 50, 50);
-        holder.icon.setImageBitmap(bitmap);
+        holder.icon.setTag(video.getUrl());
+        Bitmap localeImage = loader.getLocaleImage(video.getUrl());
+        if (localeImage == null) {
+            holder.icon.setImageResource(R.drawable.media);
+            loader.displayImage(video.getUrl(), new LoadVideoThumbnail.OnVideoThumbnailLoadCallback() {
+                @Override
+                public void loadVideoThumbnailCompleted(Bitmap image, String imageUrl) {
+                    ImageView view = (ImageView) mListView.findViewWithTag(imageUrl);
+                    if (view != null && image != null) {
+                        view.setImageBitmap(image);
+                    }
+                }
+            });
+        } else {
+            holder.icon.setImageBitmap(localeImage);
+        }
+
         holder.title.setText(video.getTitle());
         holder.display_name.setText(video.getDisplay_name());
         try {
@@ -78,8 +96,6 @@ public class VideoListAdapter extends BaseAdapter {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-
-
         return convertView;
     }
 

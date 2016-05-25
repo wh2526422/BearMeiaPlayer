@@ -9,20 +9,20 @@ import android.content.SharedPreferences;
 public class MediaKeeper {
     /**
      * 保存主题id
-     * @param context
-     * @param themeid
+     * @param context 上下文
+     * @param themeId 主题id
      */
-    public static void writeTheme(Context context,int themeid){
+    public static void writeTheme(Context context,int themeId){
 
         SharedPreferences theme = context.getSharedPreferences("theme", Context.MODE_PRIVATE);
         SharedPreferences.Editor edit = theme.edit();
-        edit.putInt("themeId",themeid);
+        edit.putInt("themeId",themeId);
         edit.apply();
     }
 
     /**
      * 读取主题id
-     * @param context
+     * @param context 上下文
      * @return
      */
     public static int readTheme(Context context){
@@ -32,8 +32,8 @@ public class MediaKeeper {
 
     /**
      * 保存播放模式
-     * @param context
-     * @param model
+     * @param context 上下文
+     * @param model 播放模式
      */
     public static void writePlaymodel(Context context,int model){
         SharedPreferences theme = context.getSharedPreferences("model", Context.MODE_PRIVATE);
@@ -44,7 +44,7 @@ public class MediaKeeper {
 
     /**
      * 读取播放模式
-     * @param context
+     * @param context 上下文
      * @return
      */
     public static int readPlaymodel(Context context){
@@ -54,8 +54,8 @@ public class MediaKeeper {
 
     /**
      * 保存当前音量
-     * @param context
-     * @param streamVolume
+     * @param context 上下文
+     * @param streamVolume 当前音量
      */
     public static void writeCurrentStreamVolume(Context context,int streamVolume) {
         SharedPreferences theme = context.getSharedPreferences("streamVolume", Context.MODE_PRIVATE);
@@ -66,11 +66,36 @@ public class MediaKeeper {
 
     /**
      * 读取播放模式
-     * @param context
+     * @param context 上下文
      * @return
      */
     public static int readCurrentStreamVolume(Context context){
         SharedPreferences streamVolume = context.getSharedPreferences("streamVolume", Context.MODE_PRIVATE);
         return streamVolume.getInt("streamVolume", 0);
     }
+
+    /**
+     * 储存视频播放进度
+     * @param context 上下文
+     * @param progress 当前进度
+     * @param name 视频名字
+     */
+    public static void writeVideoHistotyProgress(Context context,int progress,String name) {
+        SharedPreferences history_progress = context.getSharedPreferences("history_progress", Context.MODE_PRIVATE);
+        SharedPreferences.Editor edit = history_progress.edit();
+        edit.putInt(name,progress);
+        edit.apply();
+    }
+
+    /**
+     * 读取视频播放进度
+     * @param context 上下文
+     * @param name 视频名字
+     * @return
+     */
+    public static int readVideoHistotyProgress(Context context,String name){
+        SharedPreferences streamVolume = context.getSharedPreferences("history_progress", Context.MODE_PRIVATE);
+        return streamVolume.getInt(name, 0);
+    }
+
 }

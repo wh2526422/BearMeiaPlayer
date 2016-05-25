@@ -14,4 +14,7 @@
     <string name="hint">点击图片可预览，长按选择</string>
     <string name="play_on_float_view">桌面播放</string>
     <string name="back">返回</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
