@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer;
+package com.wh.bear.mediaplayer;
 
 import org.junit.Test;
 

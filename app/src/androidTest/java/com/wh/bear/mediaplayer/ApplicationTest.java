@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer;
+package com.wh.bear.mediaplayer;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

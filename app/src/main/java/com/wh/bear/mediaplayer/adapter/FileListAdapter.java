@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer.adapter;
+package com.wh.bear.mediaplayer.adapter;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -10,8 +10,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 
-import com.wh.bear.bearmeiaplayer.R;
-import com.wh.bear.bearmeiaplayer.utils.StringUtils;
+import com.wh.bear.mediaplayer.R;
+import com.wh.bear.mediaplayer.utils.StringUtils;
 
 import java.io.File;
 import java.util.List;
@@ -19,12 +19,12 @@ import java.util.List;
 /**
  * Created by Administrator on 2015-10-08.
  */
-public class FilelistAdapter extends BaseAdapter {
+public class FileListAdapter extends BaseAdapter {
 
     Context context;
     List<File> data;
 
-    public FilelistAdapter(Context context, List<File> data) {
+    public FileListAdapter(Context context, List<File> data) {
         this.context = context;
         this.data = data;
     }

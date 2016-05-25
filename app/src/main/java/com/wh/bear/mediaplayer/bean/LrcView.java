@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer.bean;
+package com.wh.bear.mediaplayer.bean;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
 
-import com.wh.bear.bearmeiaplayer.R;
+import com.wh.bear.mediaplayer.R;
 
 
 /**

@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer;
+package com.wh.bear.mediaplayer;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -29,11 +29,11 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.wh.bear.bearmeiaplayer.adapter.OnSeekBarChangeListenerAdapter;
-import com.wh.bear.bearmeiaplayer.adapter.PlayerListAdapter;
-import com.wh.bear.bearmeiaplayer.bean.Video;
-import com.wh.bear.bearmeiaplayer.utils.MediaKeeper;
-import com.wh.bear.bearmeiaplayer.utils.StringUtils;
+import com.wh.bear.mediaplayer.adapter.OnSeekBarChangeListenerAdapter;
+import com.wh.bear.mediaplayer.adapter.PlayerListAdapter;
+import com.wh.bear.mediaplayer.bean.Video;
+import com.wh.bear.mediaplayer.utils.MediaKeeper;
+import com.wh.bear.mediaplayer.utils.StringUtils;
 
 import java.io.IOException;
 import java.text.ParseException;

@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer.utils;
+package com.wh.bear.mediaplayer.utils;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;

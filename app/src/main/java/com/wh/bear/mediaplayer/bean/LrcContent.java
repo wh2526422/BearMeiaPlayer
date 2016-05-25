@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer.bean;
+package com.wh.bear.mediaplayer.bean;
 
 /**
  *

@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer;
+package com.wh.bear.mediaplayer;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -17,12 +17,11 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.wh.bear.bearmeiaplayer.bean.LrcView;
-import com.wh.bear.bearmeiaplayer.bean.Music;
-import com.wh.bear.bearmeiaplayer.utils.MediaKeeper;
-import com.wh.bear.bearmeiaplayer.utils.StringUtils;
+import com.wh.bear.mediaplayer.bean.LrcView;
+import com.wh.bear.mediaplayer.bean.Music;
+import com.wh.bear.mediaplayer.utils.MediaKeeper;
+import com.wh.bear.mediaplayer.utils.StringUtils;
 
-import java.io.BufferedReader;
 import java.text.ParseException;
 import java.util.ArrayList;
 

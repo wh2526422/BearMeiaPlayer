@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer;
+package com.wh.bear.mediaplayer;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -19,7 +19,7 @@ import android.view.animation.LayoutAnimationController;
 import android.widget.GridLayout;
 import android.widget.ImageView;
 
-import com.wh.bear.bearmeiaplayer.utils.MediaKeeper;
+import com.wh.bear.mediaplayer.utils.MediaKeeper;
 
 
 public class ThemeActivity extends Activity {

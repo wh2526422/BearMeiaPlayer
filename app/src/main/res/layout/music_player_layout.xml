@@ -52,7 +52,7 @@
             android:layout_gravity="center"
             android:src="@drawable/default_album" />
 
-        <com.wh.bear.bearmeiaplayer.bean.LrcView
+        <com.wh.bear.mediaplayer.bean.LrcView
             android:id="@+id/lrcShowView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

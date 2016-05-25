@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer;
+package com.wh.bear.mediaplayer;
 
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -18,11 +18,11 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Switch;
 
-import com.wh.bear.bearmeiaplayer.adapter.MusicListAdapter;
-import com.wh.bear.bearmeiaplayer.adapter.VideoListAdapter;
-import com.wh.bear.bearmeiaplayer.bean.Music;
-import com.wh.bear.bearmeiaplayer.bean.Video;
-import com.wh.bear.bearmeiaplayer.utils.MediaKeeper;
+import com.wh.bear.mediaplayer.adapter.MusicListAdapter;
+import com.wh.bear.mediaplayer.adapter.VideoListAdapter;
+import com.wh.bear.mediaplayer.bean.Music;
+import com.wh.bear.mediaplayer.bean.Video;
+import com.wh.bear.mediaplayer.utils.MediaKeeper;
 
 import java.util.ArrayList;
 

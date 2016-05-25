@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer.adapter;
+package com.wh.bear.mediaplayer.adapter;
 
 import android.content.Context;
 import android.view.View;
@@ -7,11 +7,10 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.wh.bear.bearmeiaplayer.R;
-import com.wh.bear.bearmeiaplayer.bean.Music;
-import com.wh.bear.bearmeiaplayer.utils.StringUtils;
+import com.wh.bear.mediaplayer.R;
+import com.wh.bear.mediaplayer.bean.Music;
+import com.wh.bear.mediaplayer.utils.StringUtils;
 
-import java.net.PortUnreachableException;
 import java.text.ParseException;
 import java.util.ArrayList;
 

@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer.adapter;
+package com.wh.bear.mediaplayer.adapter;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -13,10 +13,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 
-import com.wh.bear.bearmeiaplayer.R;
-import com.wh.bear.bearmeiaplayer.bean.Video;
-import com.wh.bear.bearmeiaplayer.utils.LoadVideoThumbnail;
-import com.wh.bear.bearmeiaplayer.utils.StringUtils;
+import com.wh.bear.mediaplayer.R;
+import com.wh.bear.mediaplayer.bean.Video;
+import com.wh.bear.mediaplayer.utils.LoadVideoThumbnail;
+import com.wh.bear.mediaplayer.utils.StringUtils;
 
 import java.text.ParseException;
 import java.util.ArrayList;

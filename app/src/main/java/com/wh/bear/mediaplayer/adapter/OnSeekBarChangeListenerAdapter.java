@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer.adapter;
+package com.wh.bear.mediaplayer.adapter;
 
 import android.widget.SeekBar;
 

@@ -1,6 +1,6 @@
-package com.wh.bear.bearmeiaplayer.utils;
+package com.wh.bear.mediaplayer.utils;
 
-import com.wh.bear.bearmeiaplayer.bean.LrcContent;
+import com.wh.bear.mediaplayer.bean.LrcContent;
 
 import java.io.BufferedReader;
 import java.io.File;

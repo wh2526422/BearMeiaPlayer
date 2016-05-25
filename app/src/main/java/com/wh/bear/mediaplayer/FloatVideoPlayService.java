@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer;
+package com.wh.bear.mediaplayer;
 
 import android.app.Activity;
 import android.content.Context;
@@ -26,9 +26,9 @@ import android.widget.TextView;
 
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.wh.bear.bearmeiaplayer.adapter.OnSeekBarChangeListenerAdapter;
-import com.wh.bear.bearmeiaplayer.bean.Video;
-import com.wh.bear.bearmeiaplayer.utils.StringUtils;
+import com.wh.bear.mediaplayer.adapter.OnSeekBarChangeListenerAdapter;
+import com.wh.bear.mediaplayer.bean.Video;
+import com.wh.bear.mediaplayer.utils.StringUtils;
 
 import java.io.IOException;
 import java.text.ParseException;

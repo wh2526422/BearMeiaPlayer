@@ -1,4 +1,4 @@
-package com.wh.bear.bearmeiaplayer;
+package com.wh.bear.mediaplayer;
 
 import android.annotation.TargetApi;
 import android.app.Notification;
@@ -21,9 +21,9 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RemoteViews;
 
-import com.wh.bear.bearmeiaplayer.bean.LrcContent;
-import com.wh.bear.bearmeiaplayer.bean.Music;
-import com.wh.bear.bearmeiaplayer.utils.LrcProcess;
+import com.wh.bear.mediaplayer.bean.LrcContent;
+import com.wh.bear.mediaplayer.bean.Music;
+import com.wh.bear.mediaplayer.utils.LrcProcess;
 
 import java.io.IOException;
 import java.util.ArrayList;
