@@ -44,7 +44,7 @@
 
         <service android:name="com.wh.bear.mediaplayer.MusicService" />
 
-        <receiver android:name="com.wh.bear.mediaplayer.MusicPlayerActivity$MusicBroadcastReiceiver">
+        <receiver android:name=".MusicPlayerActivity$MusicBroadcastReceiver">
             <intent-filter>
                 <action android:name="com.iotek.bearmediaplayer.MusicBroadcastReiceiver" />
             </intent-filter>

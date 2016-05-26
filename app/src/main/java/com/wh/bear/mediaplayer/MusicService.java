@@ -60,7 +60,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         public void run() {
             if (!pause) {
                 int currentProgress = player.getCurrentPosition();
-                Intent receiver = new Intent("com.iotek.bearmediaplayer.MusicBroadcastReiceiver");
+                Intent receiver = new Intent("com.iotek.bearmediaplayer.MusicBroadcastReceiver");
                 receiver.putExtra("currentProgress", currentProgress);
                 sendBroadcast(receiver);
             }
@@ -217,7 +217,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
             setPositionPlay(position);
         }
         //每次播放结束开始下一首歌时发送广播更新界面
-        Intent receiver = new Intent("com.iotek.bearmediaplayer.MusicBroadcastReiceiver");
+        Intent receiver = new Intent("com.iotek.bearmediaplayer.MusicBroadcastReceiver");
         receiver.putExtra("next", position == data_music.size() ? currentPosition-- : position);
         sendBroadcast(receiver);
     }

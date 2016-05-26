@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -93,11 +94,7 @@ public class FloatVideoPlayService extends Activity implements MediaPlayer.OnPre
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         initFloatView();
-//        setContentView(float_play_layout);
         onBind(getIntent());
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
     public void onBind(Intent intent) {
@@ -135,8 +132,9 @@ public class FloatVideoPlayService extends Activity implements MediaPlayer.OnPre
         }
     }
 
+    WindowManager.LayoutParams wmParams;
     private void createFloatView() {
-        WindowManager.LayoutParams wmParams = new WindowManager.LayoutParams();
+        wmParams = new WindowManager.LayoutParams();
         mWindowManager = (WindowManager) getApplication().getSystemService(getApplication().WINDOW_SERVICE);
         Log.i(TAG, "mWindowManager--->" + mWindowManager);
         //设置window type
@@ -154,7 +152,25 @@ public class FloatVideoPlayService extends Activity implements MediaPlayer.OnPre
         //设置悬浮窗口长宽数据
         wmParams.width = WindowManager.LayoutParams.MATCH_PARENT;
         wmParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+        float_player_screen.setOnTouchListener(new View.OnTouchListener()
+        {
 
+            @Override
+            public boolean onTouch(View v, MotionEvent event)
+            {
+                //      getRawX是触摸位置相对于屏幕的坐标，getX是相对于按钮的坐标
+                wmParams.x = (int) event.getRawX() - float_play_layout.getMeasuredWidth() / 2;
+                Log.i(TAG, "RawX" + event.getRawX());
+                Log.i(TAG, "X" + event.getX());
+                //      减25为状态栏的高度
+                wmParams.y = (int) event.getRawY() - float_play_layout.getMeasuredHeight() / 2 - 25;
+                Log.i(TAG, "RawY" + event.getRawY());
+                Log.i(TAG, "Y" + event.getY());
+                //刷新
+                mWindowManager.updateViewLayout(float_play_layout, wmParams);
+                return false;  //       此处必须返回false，否则OnClickListener获取不到监听
+            }
+        });
         //获取浮动窗口视图所在布局
         //添加mFloatLayout
         mWindowManager.addView(float_play_layout, wmParams);

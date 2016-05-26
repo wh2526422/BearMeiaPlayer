@@ -305,7 +305,7 @@ public class MusicPlayerActivity extends Activity {
         setCurrentModel(model);
     }
 
-    public static class MusicBroadcastReiceiver extends BroadcastReceiver {
+    public static class MusicBroadcastReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -372,7 +372,6 @@ public class MusicPlayerActivity extends Activity {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     @Override
     protected void onDestroy() {
         super.onDestroy();
