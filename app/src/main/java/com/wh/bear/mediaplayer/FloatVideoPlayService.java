@@ -1,7 +1,6 @@
 package com.wh.bear.mediaplayer;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.media.AudioManager;
@@ -25,35 +24,37 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.wh.bear.mediaplayer.adapter.OnSeekBarChangeListenerAdapter;
 import com.wh.bear.mediaplayer.bean.Video;
+import com.wh.bear.mediaplayer.utils.MediaKeeper;
 import com.wh.bear.mediaplayer.utils.StringUtils;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.ArrayList;
 
 public class FloatVideoPlayService extends Activity implements MediaPlayer.OnPreparedListener, OnErrorListener,
         MediaPlayer.OnCompletionListener, View.OnClickListener, SurfaceHolder.Callback {
+
+    private static final String TAG = "FloatVideoPlayService";
     private static final int HIDE_STATUS_BAR = 0x001011;
     private static final int UPDATE_PROGRESS = 0x001012;
 
-    MediaPlayer mPlayer;
-    FrameLayout float_play_layout;
-    SurfaceView float_player_screen;
-    TextView float_current_time, float_end_time;
-    SeekBar float_media_progress;
-    LinearLayout float_header_view, float_foot_view;
-    ImageButton btn_close;
-    private static final String TAG = "FloatVideoPlayService";
+    private MediaPlayer mPlayer;
+    private FrameLayout float_play_layout;
+    private SurfaceView float_player_screen;
+    private TextView float_current_time, float_end_time;
+    private SeekBar float_media_progress;
+    private LinearLayout float_header_view, float_foot_view;
     private long duration;
-    AudioManager mAudioManager;
-    WindowManager mWindowManager;
+    private WindowManager mWindowManager;
     private int vWidth;
     private int vHeight;
-    Video video;
-    Display currDisplay;
+    private Video video;
+    private int currentProgress;
+
+    private Display currDisplay;
     private Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -67,7 +68,7 @@ public class FloatVideoPlayService extends Activity implements MediaPlayer.OnPre
                 case UPDATE_PROGRESS:
                     try {
                         if (mPlayer == null) return;
-                        int currentProgress = mPlayer.getCurrentPosition();
+                        currentProgress = mPlayer.getCurrentPosition();
                         Log.i(TAG, "currentProgress\t" + currentProgress);
                         float_media_progress.setProgress(currentProgress);
                         float_current_time.setText(StringUtils.getVideoDuration(currentProgress));
@@ -81,18 +82,11 @@ public class FloatVideoPlayService extends Activity implements MediaPlayer.OnPre
             }
         }
     };
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    private GoogleApiClient client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.i(TAG, "onCreate");
-        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-
         initFloatView();
         onBind(getIntent());
     }
@@ -101,11 +95,12 @@ public class FloatVideoPlayService extends Activity implements MediaPlayer.OnPre
         Log.i(TAG, "onBind");
 
         video = intent.getParcelableExtra("video");
-        prepareToPlayVideo(video);
+        currentProgress = intent.getIntExtra("currentProgress", 0);
+        prepareToPlayVideo(video,currentProgress);
         createFloatView();
     }
 
-    private void prepareToPlayVideo(Video video) {
+    private void prepareToPlayVideo(Video video, int currentProgress) {
         if (video == null) return;
         currDisplay = getWindowManager().getDefaultDisplay();
         duration = video.getDuration();                             //获得视频时长
@@ -137,6 +132,7 @@ public class FloatVideoPlayService extends Activity implements MediaPlayer.OnPre
         wmParams = new WindowManager.LayoutParams();
         mWindowManager = (WindowManager) getApplication().getSystemService(getApplication().WINDOW_SERVICE);
         Log.i(TAG, "mWindowManager--->" + mWindowManager);
+        Log.i(TAG, "FloatView --->  Create start");
         //设置window type
         wmParams.type = WindowManager.LayoutParams.TYPE_PHONE;
         //设置图片格式，效果为背景透明
@@ -181,6 +177,7 @@ public class FloatVideoPlayService extends Activity implements MediaPlayer.OnPre
         Intent intent=new Intent(Intent.ACTION_MAIN);
         intent.addCategory(Intent.CATEGORY_HOME);
         startActivity(intent);
+        Log.i(TAG, "FloatView --->  Create end");
         this.finish();
     }
 
@@ -189,14 +186,15 @@ public class FloatVideoPlayService extends Activity implements MediaPlayer.OnPre
         float_play_layout = (FrameLayout) inflater.inflate(R.layout.float_video_play_layout, null);
         float_header_view = (LinearLayout) float_play_layout.findViewById(R.id.float_header_view);
         float_foot_view = (LinearLayout) float_play_layout.findViewById(R.id.float_foot_view);
-        btn_close = (ImageButton) float_play_layout.findViewById(R.id.btn_close);
         float_player_screen = (SurfaceView) float_play_layout.findViewById(R.id.float_player_screen);
         float_current_time = (TextView) float_play_layout.findViewById(R.id.float_current_time);
         float_end_time = (TextView) float_play_layout.findViewById(R.id.float_end_time);
         float_media_progress = (SeekBar) float_play_layout.findViewById(R.id.float_media_progress);
 
         float_player_screen.setOnClickListener(this);
-        btn_close.setOnClickListener(this);
+        ((ImageButton) float_play_layout.findViewById(R.id.btn_close)).setOnClickListener(this);
+        ((ImageButton) float_play_layout.findViewById(R.id.float_btn_play)).setOnClickListener(this);
+        ((ImageButton) float_play_layout.findViewById(R.id.btn_fullscreen)).setOnClickListener(this);
 
         /**
          * 进度条控制
@@ -256,10 +254,11 @@ public class FloatVideoPlayService extends Activity implements MediaPlayer.OnPre
             vHeight = (int) Math.ceil((float) vHeight / ratio);
             float_player_screen.setLayoutParams(new FrameLayout.LayoutParams(vWidth, vHeight, Gravity.CENTER));
             mp.start();
-
+            mp.seekTo(currentProgress);
             updateMediaProgress(mp);
         } else {
             mp.start();
+            mp.seekTo(currentProgress);
             updateMediaProgress(mp);
         }
     }
@@ -306,7 +305,25 @@ public class FloatVideoPlayService extends Activity implements MediaPlayer.OnPre
                 }
                 handler.sendEmptyMessageDelayed(HIDE_STATUS_BAR, 5000);
                 break;
-
+            case R.id.float_btn_play:
+                if (mPlayer != null) {
+                    if (mPlayer.isPlaying()) {
+                        ((ImageButton) v).setImageResource(android.R.drawable.ic_media_play);
+                        mPlayer.pause();
+                    } else {
+                        ((ImageButton) v).setImageResource(android.R.drawable.ic_media_pause);
+                        mPlayer.start();
+                    }
+                }
+                break;
+            case R.id.btn_fullscreen:
+                Intent intent = new Intent(this,VideoPlayerActivity.class);
+                ArrayList<Video> videos = new ArrayList<>();
+                videos.add(video);
+                intent.putParcelableArrayListExtra("data_video",videos);
+                intent.putExtra("firstPosition",0);
+                startActivity(intent);
+                MediaKeeper.writeVideoHistotyProgress(this,currentProgress,video.getTitle());
             case R.id.btn_close:
                 mWindowManager.removeViewImmediate(float_play_layout);
                 handler.removeMessages(UPDATE_PROGRESS);

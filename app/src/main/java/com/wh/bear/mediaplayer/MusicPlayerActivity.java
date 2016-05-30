@@ -5,12 +5,14 @@ import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -30,9 +32,11 @@ import java.util.ArrayList;
  */
 public class MusicPlayerActivity extends Activity {
 
+    private static final String TAG = "MusicPlayerActivity";
     private static final int PROGRESS_UPDATE = 0x101;
     private static final int DURATION_UPDATE = 0x102;
     private static final int PLAY_OVER = 0x103;
+    private static final int MUSIC_ON_PAUSE = 0x104;
 
     LinearLayout music_layout;
     public static LrcView lrcView;
@@ -47,6 +51,7 @@ public class MusicPlayerActivity extends Activity {
     static int currentPosition;                                 //当前播放音乐的位置
     private static int currentProgress;                         //当前进度
     int music_model = 0;
+    PauseListener listener;
     static Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -69,6 +74,16 @@ public class MusicPlayerActivity extends Activity {
                     lrcView.setmLrcList(null);
                     lrcView.invalidate();
                     currentPosition = data_music.size() -1;
+                    break;
+                case MUSIC_ON_PAUSE:
+                    if (music_play != null) {
+                        boolean play = (boolean) msg.obj;
+                        if (play) {
+                            music_play.setImageResource(android.R.drawable.ic_media_pause);
+                        } else {
+                            music_play.setImageResource(android.R.drawable.ic_media_play);
+                        }
+                    }
                     break;
             }
         }
@@ -117,7 +132,7 @@ public class MusicPlayerActivity extends Activity {
         service.putExtra("url", music.getUrl());
         startService(service);
         //发送首次广播传递数据
-        Intent receiver = new Intent("com.iotek.bearmediaplayer.MusicServiceReceiver");
+        Intent receiver = new Intent("com.wh.bear.mediaplayer.MusicServiceReceiver");
         receiver.putParcelableArrayListExtra("data_music", data_music);
         receiver.putExtra("firstPosition", firstPosition);
 
@@ -251,6 +266,11 @@ public class MusicPlayerActivity extends Activity {
                 startActivity(intent1);
             }
         });
+
+        listener = new PauseListener();
+        IntentFilter filter1 = new IntentFilter();
+        filter1.addAction("com.wh.changesingflag");
+        registerReceiver(listener, filter1);
     }
 
     /**
@@ -311,6 +331,7 @@ public class MusicPlayerActivity extends Activity {
         public void onReceive(Context context, Intent intent) {
             //从service发送过来，时时更新进度
             currentProgress = intent.getIntExtra("currentProgress", 0);
+            Log.i(TAG,"currentProgress\t" + currentProgress);
             handler.sendEmptyMessage(PROGRESS_UPDATE);
             //当service自动播放时，用于更新界面的广播
             int next = intent.getIntExtra("next", -1);
@@ -376,6 +397,9 @@ public class MusicPlayerActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         MediaKeeper.writePlaymodel(this, music_model);
+        if (listener != null) {
+            unregisterReceiver(listener);
+        }
     }
 
     /**
@@ -394,6 +418,24 @@ public class MusicPlayerActivity extends Activity {
                     break;
                 default:
                     break;
+            }
+        }
+    }
+
+    /**
+     * 监听系统音量变化而改变音量进度的广播
+     */
+    private class PauseListener extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            //当音乐暂停时改变播放按钮样式
+            if (intent.getAction().equals("com.wh.changesingflag")) {
+                boolean play = intent.getBooleanExtra("play",false);
+                Log.i(TAG,"play\t" + play);
+                Message msg = handler.obtainMessage(MUSIC_ON_PAUSE);
+                msg.obj = play;
+                handler.sendMessage(msg);
             }
         }
     }

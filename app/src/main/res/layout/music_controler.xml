@@ -27,7 +27,9 @@
                 android:id="@+id/music_progress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:maxHeight="48dp"
+                android:minHeight="48dp"/>
 
             <TextView
                 android:id="@+id/music_endTime"

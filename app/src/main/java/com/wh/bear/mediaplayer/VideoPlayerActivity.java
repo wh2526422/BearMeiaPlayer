@@ -38,6 +38,7 @@ import com.wh.bear.mediaplayer.utils.StringUtils;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.io.File;
 
 
 /**
@@ -51,29 +52,29 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
     private static final int HIDE_STATUS_BAR = 0x001;
     private static final int UPDATE_PROGRESS = 0x002;
 
-    SurfaceView player_screen;
-    LinearLayout ctr_layout,video_play_header_view;
-    SeekBar media_progress, sound_progress;
-    ImageButton btn_sound, btn_rew, btn_previous, btn_play, btn_next, btn_ff;
-    ImageButton full_screen;                        //  全屏按钮,视频铺满屏幕
-    Button btn_float_play,btn_back;
-    TextView current_time, end_time;
-    View videoList;
-    MediaPlayer player;
-    Display currDisplay;
-    AudioManager mAudioManager;
+    private SurfaceView player_screen;
+    private LinearLayout ctr_layout,video_play_header_view;
+    private SeekBar media_progress, sound_progress;
+    private ImageButton btn_sound, btn_rew, btn_previous, btn_play, btn_next, btn_ff;
+    private ImageButton full_screen;                        //  全屏按钮,视频铺满屏幕
+    private Button btn_float_play,btn_back;
+    private TextView current_time, end_time;
+    private View videoList;
+    private MediaPlayer player;
+    private Display currDisplay;
+    private AudioManager mAudioManager;
     private int vWidth;                                             //  视频宽
     private int vHeight;                                            //  视频高
-    int currentProgress;                                            //  播放视频的当前进度
-    long duration;                                                  //  当前视频的时长
-    ListView video_list;                                            //  播放列表
-    Button btn_ctr_list;                                            //  控制列表隐藏显示
-    ArrayList<Video> data;                                          //  列表数据源
-    int currentPosition;                                            //  当前播放视频的位置
-    PlayerListAdapter adapter;
-    boolean videoListOpen = false;                                  //  视频列表是否在显示
+    private int currentProgress;                                            //  播放视频的当前进度
+    private long duration;                                                  //  当前视频的时长
+    private ListView video_list;                                            //  播放列表
+    private Button btn_ctr_list;                                            //  控制列表隐藏显示
+    private ArrayList<Video> data;                                          //  列表数据源
+    private int currentPosition;                                            //  当前播放视频的位置
+    private PlayerListAdapter adapter;
+    private boolean videoListOpen = false;                                  //  视频列表是否在显示
     boolean isFullScreen;
-    VolumeReceiver mVolumeReceiver;                                 //  音量监听
+    private VolumeReceiver mVolumeReceiver;                                 //  音量监听
 
     Handler handler = new Handler() {
         @Override
@@ -205,7 +206,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
             }
         });
 
-        registerVolumeReceiver();
+        registerReceiver();
     }
 
     private void initUi() {
@@ -235,6 +236,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
         video_play_header_view = (LinearLayout) findViewById(R.id.video_play_header_view);
         btn_back = (Button) findViewById(R.id.btn_back);
         btn_float_play = (Button) findViewById(R.id.btn_float_play);
+        (findViewById(R.id.btn_screenshot)).setOnClickListener(this);
 
         currDisplay = getWindowManager().getDefaultDisplay();
         // fullscreen
@@ -322,15 +324,18 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
             //视频每次播放时跳转到历史位置
             currentProgress = MediaKeeper.readVideoHistotyProgress(this,data.get(currentPosition).getTitle());
             Log.i(TAG, "currentProgress\t" + currentProgress);
-            mp.seekTo(currentProgress);
-
+            if (currentProgress != duration) {
+                mp.seekTo(currentProgress);
+            }
             updateMediaProgress(mp);
         } else {
             mp.start();
             //视频每次播放时跳转到历史位置
             currentProgress = MediaKeeper.readVideoHistotyProgress(this,data.get(currentPosition).getTitle());
             Log.i(TAG, "currentProgress\t" + currentProgress);
-            mp.seekTo(currentProgress);
+            if (currentProgress != duration) {
+                mp.seekTo(currentProgress);
+            }
             updateMediaProgress(mp);
         }
     }
@@ -343,7 +348,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
     @Override
     public void onCompletion(MediaPlayer mp) {
         btn_play.setImageResource(android.R.drawable.ic_media_play);
-        finish();
+        handler.removeMessages(UPDATE_PROGRESS);
     }
 
     @Override
@@ -423,6 +428,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
         if (mVolumeReceiver != null) {
             unregisterReceiver(mVolumeReceiver);
         }
+
     }
 
     float downX;
@@ -551,9 +557,11 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
                     if (player.isPlaying()) {
                         ((ImageButton) v).setImageResource(android.R.drawable.ic_media_play);
                         player.pause();
+                        handler.removeMessages(UPDATE_PROGRESS);
                     } else {
                         ((ImageButton) v).setImageResource(android.R.drawable.ic_media_pause);
                         player.start();
+                        handler.sendEmptyMessage(UPDATE_PROGRESS);
                     }
                 }
 
@@ -605,9 +613,15 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
                 }
                 break;
             case R.id.btn_float_play:
-                startActivity(new Intent(this,FloatVideoPlayService.class).putExtra("video",data.get(currentPosition)));
+                Intent intent = new Intent(this, FloatVideoPlayService.class);
+                intent.putExtra("video",data.get(currentPosition));
+                intent.putExtra("currentProgress",currentProgress);
+                startActivity(intent);
             case R.id.btn_back:
                 finish();
+                break;
+            case R.id.btn_screenshot:
+
                 break;
         }
     }
@@ -642,7 +656,7 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
     /**
      * 注册音量监听
      */
-    private void registerVolumeReceiver() {
+    private void registerReceiver() {
         mVolumeReceiver = new VolumeReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction("android.media.VOLUME_CHANGED_ACTION");
@@ -663,6 +677,4 @@ public class VideoPlayerActivity extends AppCompatActivity implements MediaPlaye
             }
         }
     }
-
-
 }

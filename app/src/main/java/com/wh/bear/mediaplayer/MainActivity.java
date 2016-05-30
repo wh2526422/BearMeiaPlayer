@@ -16,6 +16,7 @@ import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.SeekBar;
 import android.widget.Switch;
 
 import com.wh.bear.mediaplayer.adapter.MusicListAdapter;
@@ -45,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         int notifyPosition = getIntent().getIntExtra("currentPosition", -1);
 
         main_layout = (LinearLayout) findViewById(R.id.main_layout);

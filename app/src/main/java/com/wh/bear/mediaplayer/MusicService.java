@@ -60,7 +60,8 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
         public void run() {
             if (!pause) {
                 int currentProgress = player.getCurrentPosition();
-                Intent receiver = new Intent("com.iotek.bearmediaplayer.MusicBroadcastReceiver");
+                Log.i(TAG, "currentProgress\t" + currentProgress);
+                Intent receiver = new Intent("com.wh.bear.mediaplayer.MusicBroadcastReiceiver");
                 receiver.putExtra("currentProgress", currentProgress);
                 sendBroadcast(receiver);
             }
@@ -92,6 +93,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
     /**
      * 响应界面播放暂停及改变进度相关事件处理
+     *
      * @param intent
      */
     private void playOrpauseControl(Intent intent) {
@@ -109,12 +111,14 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
                     player.seekTo(progress);
                     break;
             }
+            sendChangeSingFlagReceiver(player.isPlaying(), currentPosition);
             initNotification();
         }
     }
 
     /**
      * 判断从音乐列表传过来的音乐是否和当前播放的是用一首如果是则继续播放
+     *
      * @param intent
      * @return
      */
@@ -134,6 +138,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
     /**
      * 相应通知相关点击事件的处理
+     *
      * @param intent
      * @return
      */
@@ -263,7 +268,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     private void pause() {
         if (player != null) {
             player.pause();
-            sendChangeSingFlagReceiver(player.isPlaying(), currentPosition);
+            //sendChangeSingFlagReceiver(player.isPlaying(), currentPosition);
         }
         pause = true;
 
@@ -345,10 +350,12 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
 
     /**
      * 发送改变歌曲标志的广播，用于界面显示歌曲是否在播放
+     *
      * @param play
      * @param position
      */
     private void sendChangeSingFlagReceiver(boolean play, int position) {
+        Log.i(TAG, "sendChangeSingFlagReceiver");
         Intent intent = new Intent("com.wh.changesingflag");
         intent.putExtra("position", position);
         intent.putExtra("play", play);
@@ -358,7 +365,7 @@ public class MusicService extends Service implements MediaPlayer.OnCompletionLis
     @Override
     public void onPrepared(MediaPlayer mp) {
         initNotification();
-        sendChangeSingFlagReceiver(mp.isPlaying(), currentPosition);
+        //sendChangeSingFlagReceiver(mp.isPlaying(), currentPosition);
     }
 
     public static class MusicServiceReceiver extends BroadcastReceiver {
